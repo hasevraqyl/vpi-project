@@ -1,9 +1,11 @@
 from Resource import Resource
-from Province import Province
 from Material import Material
 
 
 class ProvinceResource(Resource):
+    def __init__(self, province=None):
+        self._province = province
+
     _turnProduction = 0
 
     def get_TurnProduction(self):
@@ -12,8 +14,6 @@ class ProvinceResource(Resource):
     def set_TurnProduction(self, value):
         self._turnProduction = value
         return
-
-    _province = Province()
 
     def get_Province(self):
         return self._province

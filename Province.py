@@ -1,20 +1,17 @@
 from ITurnBased import ITurnBased
 from IdentityBase import IdentityBase
-from System import System
 from Resource import Resource
 
 
 class Province(IdentityBase, ITurnBased):
-    _reigningsystem = System()
+    def __init__(self, system):
+        self._reigningsystem = system
+
     """when we have a normal init system
     we will have to clear stuff up"""
 
     def get_ReigningSystem(self):
         return self._reigningsystem
-
-    def set_ReigningSystem(self, value):
-        self._reigningsystem = value
-        return
 
     _resourcesFromProvince = []
 
@@ -30,8 +27,6 @@ class Province(IdentityBase, ITurnBased):
         for resource in self._resourcesFromProvince:
             total = resource.get_Quantity() + resource.get_TurnProduction()
             resource.set_Quantity(total)
-        if self._reigningsystem is None:
-            return
         """this is the part that will get changed in the future"""
         reigningpolity = self._reigningsystem.get_ReigningPolity()
         if reigningpolity is None:

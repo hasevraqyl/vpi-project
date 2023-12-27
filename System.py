@@ -1,13 +1,13 @@
 from ITurnBased import ITurnBased
 from IdentityBase import IdentityBase
-from Polity import Polity
 
 
 class System(IdentityBase, ITurnBased):
     """something something we will have to
     change this line below when we have normal init"""
 
-    _reigningpolity = Polity()
+    def __init__(self, polity=None):
+        self._reigningpolity = polity
 
     def get_ReigningPolity(self):
         return self._reigningpolity
