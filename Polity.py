@@ -6,6 +6,15 @@ from IdentityBase import IdentityBase
 class Polity(IdentityBase, IResourceHolder, ITurnBased):
     _systems = []
 
+    _money = 0
+
+    def get_Money(self):
+        return self._money
+
+    def set_Money(self, value):
+        self._money = value
+        return
+
     def get_Systems(self):
         return self._systems
 

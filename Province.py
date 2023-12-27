@@ -4,8 +4,20 @@ from Resource import Resource
 
 
 class Province(IdentityBase, ITurnBased):
-    def __init__(self, system):
+    def __init__(self, system, rp):
         self._reigningsystem = system
+        self._rp = rp
+
+    _bp = 0
+
+    _tr = 0
+
+    def get_BP(self):
+        return self._bp
+
+    def set_BP(self, value):
+        self._bp = value
+        return
 
     """when we have a normal init system
     we will have to clear stuff up"""
@@ -57,4 +69,6 @@ class Province(IdentityBase, ITurnBased):
         polityResource.set_Quantity(
             polityResource.get_Quantity() + resource.get_TurnProduction()
         )
+        reigningpolity.set_Money(reigningpolity.get_Money() + self._bp)
+        self._tr = self._tr + (self._rp - self._bp)
         return
