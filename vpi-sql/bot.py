@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from vpimain import Game
 
-MY_GUILD = discord.Object(id=1012047346206519326)  # replace with your guild id
+MY_GUILD = discord.Object(id=1157327909992804456)  # replace with your guild id
 
 
 class MyClient(discord.Client):
@@ -40,7 +40,7 @@ async def on_ready():
 async def turn(interaction: discord.Interaction):
     """Makes a turn"""
     Game.turn()
-    await interaction.response.send_message("Turn made.")
+    await interaction.response.send_message("Ход сделан")
 
 
 @client.tree.command()
@@ -50,9 +50,12 @@ async def turn(interaction: discord.Interaction):
 async def planet(interaction: discord.Interaction, first_value: str):
     """Info about a planet."""
     system, resources = Game.fetch_Planet(first_value)
-    await interaction.response.send_message(
-        f"System:{system}; RO:{abs(resources[0][0])}; BP:{resources[0][1]}; RS:{resources[0][2]}"
-    )
+    if system is None:
+        await interaction.response.send_message("Такой планеты нету.")
+    else:
+        await interaction.response.send_message(
+            f"Планета {first_value} находится в системе {system}. \nОбщий прирост {abs(resources[0][0])}; базовая продукция {resources[0][1]}; накопленных ресурсов {abs(resources[0][2])}."
+        )
 
 
 @client.tree.command()
@@ -63,10 +66,13 @@ async def planet_add_bp(
     interaction: discord.Interaction, first_value: str, second_value: int
 ):
     """Add BP to a planet."""
-    Game.add_BP(first_value, second_value)
-    await interaction.response.send_message(
-        f"Increased the BP by {second_value} on {first_value}"
-    )
+    flag = Game.add_BP(first_value, second_value)
+    if not flag:
+        await interaction.response.send_message("Такой планеты нету.")
+    else:
+        await interaction.response.send_message(
+            f"Базовая продукция увеличена на {second_value} на планете {first_value}"
+        )
 
 
 client.run("MTE5MDY1MDk3MjQ3Nzg0OTY5Mg.Gu1UAB.B9iQHcbcmbfwi3wzTC87YI6xeRD9qW9XMTPxpI")

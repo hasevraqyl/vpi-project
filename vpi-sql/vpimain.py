@@ -61,6 +61,13 @@ class Game(object):
 
     @classmethod
     def fetch_Planet(cls, pln):
+        if (
+            len(
+                list(cur.execute("SELECT system FROM systems where planet = ?", (pln,)))
+            )
+            == 0
+        ):
+            return None, None
         planetsystem = list(
             cur.execute("SELECT system FROM systems where planet = ?", (pln,))
         )[0][0]
@@ -71,6 +78,13 @@ class Game(object):
 
     @classmethod
     def add_BP(cls, pln, rsrs):
+        if (
+            len(
+                list(cur.execute("SELECT system FROM systems where planet = ?", (pln,)))
+            )
+            == 0
+        ):
+            return False
         planetresources = list(
             cur.execute("SELECT RO, BP, RS FROM resources where planet = ?", (pln,))
         )
@@ -86,3 +100,5 @@ class Game(object):
                 )
             ],
         )
+        con.commit()
+        return True
