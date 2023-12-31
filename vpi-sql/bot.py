@@ -49,8 +49,8 @@ async def turn(interaction: discord.Interaction):
 )
 async def planet(interaction: discord.Interaction, first_value: str):
     """Info about a planet."""
-    system, resources = Game.fetch_Planet(first_value)
-    if system is None:
+    system, resources, status = Game.fetch_Planet(first_value)
+    if status.name == "no_elem":
         await interaction.response.send_message("Такой планеты нету.")
     else:
         await interaction.response.send_message(
@@ -66,8 +66,8 @@ async def planet_add_bp(
     interaction: discord.Interaction, first_value: str, second_value: int
 ):
     """Add BP to a planet."""
-    flag = Game.add_BP(first_value, second_value)
-    if not flag:
+    status = Game.add_BP(first_value, second_value)
+    if status.name == "no_elem":
         await interaction.response.send_message("Такой планеты нету.")
     else:
         await interaction.response.send_message(

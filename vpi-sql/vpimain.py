@@ -1,7 +1,16 @@
 import sqlite3
+from enum_implement import DiscordStatusCode
 
 con = sqlite3.connect("vpi.db")
 cur = con.cursor()
+
+
+def is_float(string):
+    try:
+        float(string)
+        return True
+    except ValueError:
+        return False
 
 
 class Game(object):
@@ -67,14 +76,14 @@ class Game(object):
             )
             == 0
         ):
-            return None, None
+            return None, None, DiscordStatusCode.no_elem
         planetsystem = list(
             cur.execute("SELECT system FROM systems where planet = ?", (pln,))
         )[0][0]
         planetresources = list(
             cur.execute("SELECT RO, BP, RS FROM resources where planet = ?", (pln,))
         )
-        return planetsystem, planetresources
+        return planetsystem, planetresources, DiscordStatusCode.all_clear
 
     @classmethod
     def add_BP(cls, pln, rsrs):
@@ -84,7 +93,7 @@ class Game(object):
             )
             == 0
         ):
-            return False
+            return DiscordStatusCode.no_elem
         planetresources = list(
             cur.execute("SELECT RO, BP, RS FROM resources where planet = ?", (pln,))
         )
@@ -101,4 +110,4 @@ class Game(object):
             ],
         )
         con.commit()
-        return True
+        return DiscordStatusCode.all_clear
