@@ -13,6 +13,20 @@ def is_float(string):
         return False
 
 
+def comma_stringer(bad_list):
+    string = ""
+    i = 0
+    for elem in bad_list:
+        i += 1
+        if i == len(bad_list):
+            string += "{}".format(elem[0])
+            string += "."
+        else:
+            string += "{}".format(elem[0])
+            string += ", "
+    return string
+
+
 class Game(object):
     @classmethod
     def turn(cls):
@@ -70,20 +84,55 @@ class Game(object):
 
     @classmethod
     def fetch_Planet(cls, pln):
-        if (
-            len(
-                list(cur.execute("SELECT system FROM systems where planet = ?", (pln,)))
-            )
-            == 0
-        ):
+        plsys = list(cur.execute("SELECT system FROM systems where planet = ?", (pln,)))
+        if len(plsys) == 0:
             return None, None, DiscordStatusCode.no_elem
-        planetsystem = list(
-            cur.execute("SELECT system FROM systems where planet = ?", (pln,))
-        )[0][0]
+        planetsystem = plsys[0][0]
         planetresources = list(
             cur.execute("SELECT RO, BP, RS FROM resources where planet = ?", (pln,))
-        )
+        )[0]
         return planetsystem, planetresources, DiscordStatusCode.all_clear
+
+    @classmethod
+    def fetch_System(cls, sys):
+        plsys = list(cur.execute("SELECT system FROM systems where system = ?", (sys,)))
+        if len(plsys) == 0:
+            return None, None, DiscordStatusCode.no_elem
+        planetlist = list(
+            cur.execute("SELECT planet FROM systems where system = ?", (sys,))
+        )
+        planetstring = comma_stringer(planetlist)
+        polity = list(
+            cur.execute(
+                "SELECT polity_name FROM polities where polity_id = ?",
+                (
+                    list(
+                        cur.execute(
+                            "SELECT polity_id FROM systems where system = ?", (sys,)
+                        )
+                    )[0][0],
+                ),
+            )
+        )[0][0]
+        return polity, planetstring, DiscordStatusCode.all_clear
+
+    @classmethod
+    def fetch_Polity(cls, pol):
+        plsys = list(
+            cur.execute("SELECT polity_id FROM polities where polity_name = ?", (pol,))
+        )
+        if len(plsys) == 0:
+            return None, None, DiscordStatusCode.no_elem
+        systemlist = list(
+            cur.execute(
+                "SELECT DISTINCT system from systems where polity_id = ?", (plsys[0])
+            )
+        )
+        systemstring = comma_stringer(systemlist)
+        creds = list(
+            cur.execute("SELECT creds FROM polities where polity_id = ?", (plsys[0]))
+        )[0][0]
+        return creds, systemstring, DiscordStatusCode.all_clear
 
     @classmethod
     def add_BP(cls, pln, rsrs):
@@ -111,3 +160,48 @@ class Game(object):
         )
         con.commit()
         return DiscordStatusCode.all_clear
+
+    @classmethod
+    def transfer_System(cls, sys, pol):
+        plsys = list(
+            cur.execute("SELECT polity_id FROM systems where system = ?", (sys,))
+        )
+        plname = list(
+            cur.execute(
+                "SELECT polity_name FROM polities where polity_id = ?", plsys[0]
+            )
+        )
+        if len(plsys) == 0:
+            return None, DiscordStatusCode.no_elem
+        plpol = list(
+            cur.execute("SELECT polity_id FROM polities where polity_name = ?", (pol,))
+        )
+        if len(plpol) == 0:
+            return None, None, DiscordStatusCode.no_elem
+        if plsys == plpol:
+            return None, None, DiscordStatusCode.invalid_elem
+        systemlist = list(
+            cur.execute("SELECT planet FROM systems where system = ?", (sys,))
+        )
+        cur.executemany(
+            "DELETE from systems where polity_id = ? AND system = ?",
+            [
+                (
+                    plsys[0][0],
+                    sys,
+                )
+            ],
+        )
+        for system in systemlist:
+            cur.executemany(
+                "INSERT INTO systems VALUES(?, ?, ?)",
+                [
+                    (
+                        plpol[0][0],
+                        sys,
+                        system[0],
+                    )
+                ],
+            )
+        con.commit()
+        return plname[0][0], DiscordStatusCode.all_clear

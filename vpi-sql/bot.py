@@ -38,40 +38,93 @@ async def on_ready():
 
 @client.tree.command()
 async def turn(interaction: discord.Interaction):
-    """Makes a turn"""
+    """Совершает ход"""
     Game.turn()
-    await interaction.response.send_message("Ход сделан")
+    await interaction.response.send_message("Ход сделан.")
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="the name of the planet",
+    first_value="название планеты",
 )
 async def planet(interaction: discord.Interaction, first_value: str):
-    """Info about a planet."""
+    """Информация о планете."""
     system, resources, status = Game.fetch_Planet(first_value)
     if status.name == "no_elem":
         await interaction.response.send_message("Такой планеты нету.")
     else:
         await interaction.response.send_message(
-            f"Планета {first_value} находится в системе {system}. \nОбщий прирост {abs(resources[0][0])}; базовая продукция {resources[0][1]}; накопленных ресурсов {abs(resources[0][2])}."
+            f"Планета {first_value} находится в системе {system}. \nОбщий прирост {abs(resources[0])}; базовая продукция {resources[1]}; накопленных ресурсов {abs(resources[2])}."
         )
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="the name of the planet", second_value="number of resources"
+    first_value="название системы",
+)
+async def system(interaction: discord.Interaction, first_value: str):
+    """Информация о системе."""
+    polity, planets, status = Game.fetch_System(first_value)
+    if status.name == "no_elem":
+        await interaction.response.send_message("Такой системы нету.")
+    else:
+        await interaction.response.send_message(
+            f"Система {first_value} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets}"
+        )
+
+
+@client.tree.command()
+@app_commands.describe(
+    first_value="название империи",
+)
+async def polity(interaction: discord.Interaction, first_value: str):
+    """Информация об империи."""
+    creds, systems, status = Game.fetch_Polity(first_value)
+    if status.name == "no_elem":
+        await interaction.response.send_message("Такой империи нету.")
+    else:
+        await interaction.response.send_message(
+            f"Империя {first_value} имеет баланс в {creds} кредитов. \nВ состав империи входят следующие планеты: {systems}"
+        )
+
+
+@client.tree.command()
+@app_commands.describe(
+    first_value="название планеты", second_value="количество добавляемой продукции"
 )
 async def planet_add_bp(
     interaction: discord.Interaction, first_value: str, second_value: int
 ):
-    """Add BP to a planet."""
+    """Добавляем продукцию."""
     status = Game.add_BP(first_value, second_value)
     if status.name == "no_elem":
         await interaction.response.send_message("Такой планеты нету.")
     else:
         await interaction.response.send_message(
             f"Базовая продукция увеличена на {second_value} на планете {first_value}"
+        )
+
+
+@client.tree.command()
+@app_commands.describe(
+    first_value="название cистемы", second_value="название новой правящей империи"
+)
+async def transfer(
+    interaction: discord.Interaction, first_value: str, second_value: str
+):
+    """Передаем систему от одной империи к другой."""
+    oldsys, status = Game.transfer_System(first_value, second_value)
+    if status.name == "no_elem":
+        await interaction.response.send_message(
+            "Проверьте правильность параметров; системы либо империи не существует."
+        )
+    if status.name == "invalid_elem":
+        await interaction.response.send_message(
+            f"Система {first_value} уже находится под контролем империи {second_value}."
+        )
+    else:
+        await interaction.response.send_message(
+            f"Система {first_value} передана от империи {oldsys} империи {second_value}."
         )
 
 
