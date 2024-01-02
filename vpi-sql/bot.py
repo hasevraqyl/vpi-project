@@ -3,6 +3,7 @@ from discord import app_commands
 from vpimain import Game
 
 MY_GUILD = discord.Object(id=1157327909992804456)  # replace with your guild id
+auth_user_ids = [642112940295847984, 1162034396019314799]
 
 
 class MyClient(discord.Client):
@@ -48,11 +49,14 @@ async def turn(interaction: discord.Interaction):
 
 @client.tree.command()
 async def restart(interaction: discord.Interaction):
-    """Перезапускает игру. ВНИМАНИЕ! ВЫ ТОЧНО УВЕРЕНЫ?"""
-    Game.rollback()
-    await interaction.response.send_message(
-        "Игра перезапущена и откачена к начальному состоянию."
-    )
+    if interaction.user.id in auth_user_ids:
+        """Перезапускает игру. ВНИМАНИЕ! ВЫ ТОЧНО УВЕРЕНЫ?"""
+        Game.rollback()
+        await interaction.response.send_message(
+            "Игра перезапущена и откачена к начальному состоянию."
+        )
+    else:
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
 
 
 @client.tree.command()
@@ -113,16 +117,19 @@ async def polity(interaction: discord.Interaction, first_value: str):
 async def planet_add_bp(
     interaction: discord.Interaction, first_value: str, second_value: int
 ):
-    """Добавляем продукцию."""
-    status = Game.add_BP(first_value, second_value)
-    if status.name == "no_elem":
-        await interaction.response.send_message("Такой планеты нету.")
-    elif status.name == "no_table":
-        await interaction.response.send_message("Ошибка. Перезапустите игру.")
+    if interaction.user.id in auth_user_ids:
+        """Добавляем продукцию."""
+        status = Game.add_BP(first_value, second_value)
+        if status.name == "no_elem":
+            await interaction.response.send_message("Такой планеты нету.")
+        elif status.name == "no_table":
+            await interaction.response.send_message("Ошибка. Перезапустите игру.")
+        else:
+            await interaction.response.send_message(
+                f"Базовая продукция увеличена на {second_value} на планете {first_value}"
+            )
     else:
-        await interaction.response.send_message(
-            f"Базовая продукция увеличена на {second_value} на планете {first_value}"
-        )
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
 
 
 @client.tree.command()
@@ -132,22 +139,25 @@ async def planet_add_bp(
 async def transfer(
     interaction: discord.Interaction, first_value: str, second_value: str
 ):
-    """Передаем систему от одной империи к другой."""
-    oldsys, status = Game.transfer_System(first_value, second_value)
-    if status.name == "no_elem":
-        await interaction.response.send_message(
-            "Проверьте правильность параметров; системы либо империи не существует."
-        )
-    elif status.name == "no_table":
-        await interaction.response.send_message("Ошибка. Перезапустите игру.")
-    if status.name == "invalid_elem":
-        await interaction.response.send_message(
-            f"Система {first_value} уже находится под контролем империи {second_value}."
-        )
+    if interaction.user.id in auth_user_ids:
+        """Передаем систему от одной империи к другой."""
+        oldsys, status = Game.transfer_System(first_value, second_value)
+        if status.name == "no_elem":
+            await interaction.response.send_message(
+                "Проверьте правильность параметров; системы либо империи не существует."
+            )
+        elif status.name == "no_table":
+            await interaction.response.send_message("Ошибка. Перезапустите игру.")
+        if status.name == "invalid_elem":
+            await interaction.response.send_message(
+                f"Система {first_value} уже находится под контролем империи {second_value}."
+            )
+        else:
+            await interaction.response.send_message(
+                f"Система {first_value} передана от империи {oldsys} империи {second_value}."
+            )
     else:
-        await interaction.response.send_message(
-            f"Система {first_value} передана от империи {oldsys} империи {second_value}."
-        )
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
 
 
 client.run("MTE5MDY1MDk3MjQ3Nzg0OTY5Mg.Gu1UAB.B9iQHcbcmbfwi3wzTC87YI6xeRD9qW9XMTPxpI")
