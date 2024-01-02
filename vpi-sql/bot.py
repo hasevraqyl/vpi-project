@@ -39,8 +39,11 @@ async def on_ready():
 @client.tree.command()
 async def turn(interaction: discord.Interaction):
     """Совершает ход"""
-    Game.turn()
-    await interaction.response.send_message("Ход сделан.")
+    status = Game.turn()
+    if status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
+    else:
+        await interaction.response.send_message("Ход сделан.")
 
 
 @client.tree.command()
@@ -61,6 +64,8 @@ async def planet(interaction: discord.Interaction, first_value: str):
     system, resources, status = Game.fetch_Planet(first_value)
     if status.name == "no_elem":
         await interaction.response.send_message("Такой планеты нету.")
+    elif status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
     else:
         await interaction.response.send_message(
             f"Планета {first_value} находится в системе {system}. \nОбщий прирост {abs(resources[0])}; базовая продукция {resources[1]}; накопленных ресурсов {abs(resources[2])}."
@@ -76,6 +81,8 @@ async def system(interaction: discord.Interaction, first_value: str):
     polity, planets, status = Game.fetch_System(first_value)
     if status.name == "no_elem":
         await interaction.response.send_message("Такой системы нету.")
+    elif status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
     else:
         await interaction.response.send_message(
             f"Система {first_value} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets}"
@@ -91,6 +98,8 @@ async def polity(interaction: discord.Interaction, first_value: str):
     creds, systems, status = Game.fetch_Polity(first_value)
     if status.name == "no_elem":
         await interaction.response.send_message("Такой империи нету.")
+    elif status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
     else:
         await interaction.response.send_message(
             f"Империя {first_value} имеет баланс в {creds} кредитов. \nВ состав империи входят следующие планеты: {systems}"
@@ -108,6 +117,8 @@ async def planet_add_bp(
     status = Game.add_BP(first_value, second_value)
     if status.name == "no_elem":
         await interaction.response.send_message("Такой планеты нету.")
+    elif status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
     else:
         await interaction.response.send_message(
             f"Базовая продукция увеличена на {second_value} на планете {first_value}"
@@ -127,6 +138,8 @@ async def transfer(
         await interaction.response.send_message(
             "Проверьте правильность параметров; системы либо империи не существует."
         )
+    elif status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
     if status.name == "invalid_elem":
         await interaction.response.send_message(
             f"Система {first_value} уже находится под контролем империи {second_value}."

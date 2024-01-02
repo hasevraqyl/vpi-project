@@ -27,9 +27,19 @@ def comma_stringer(bad_list):
     return string
 
 
+def check_table():
+    r = cur.execute("SELECT name from sqlite_master WHERE name = 'systems'")
+    if r.fetchone() is None:
+        return False
+    return True
+
+
 class Game(object):
     @classmethod
     def rollback(cls):
+        cur.execute("DROP TABLE IF EXISTS polities")
+        cur.execute("DROP TABLE IF EXISTS systems")
+        cur.execute("DROP TABLE IF EXISTS resources")
         cur.execute(
             """CREATE TABLE polities (
     polity_id INTEGER   PRIMARY KEY
@@ -85,6 +95,8 @@ class Game(object):
 
     @classmethod
     def turn(cls):
+        if not check_table():
+            return DiscordStatusCode.no_table
         for row in list(
             cur.execute(
                 "SELECT polity_id, polity_name, polity_desc, creds FROM polities"
@@ -139,6 +151,8 @@ class Game(object):
 
     @classmethod
     def fetch_Planet(cls, pln):
+        if not check_table():
+            return None, None, DiscordStatusCode.no_table
         plsys = list(cur.execute("SELECT system FROM systems where planet = ?", (pln,)))
         if len(plsys) == 0:
             return None, None, DiscordStatusCode.no_elem
@@ -150,6 +164,8 @@ class Game(object):
 
     @classmethod
     def fetch_System(cls, sys):
+        if not check_table():
+            return None, None, DiscordStatusCode.no_table
         plsys = list(cur.execute("SELECT system FROM systems where system = ?", (sys,)))
         if len(plsys) == 0:
             return None, None, DiscordStatusCode.no_elem
@@ -173,6 +189,8 @@ class Game(object):
 
     @classmethod
     def fetch_Polity(cls, pol):
+        if not check_table():
+            return None, None, DiscordStatusCode.no_table
         plsys = list(
             cur.execute("SELECT polity_id FROM polities where polity_name = ?", (pol,))
         )
@@ -191,6 +209,8 @@ class Game(object):
 
     @classmethod
     def add_BP(cls, pln, rsrs):
+        if not check_table():
+            return DiscordStatusCode.no_table
         if (
             len(
                 list(cur.execute("SELECT system FROM systems where planet = ?", (pln,)))
@@ -218,6 +238,8 @@ class Game(object):
 
     @classmethod
     def transfer_System(cls, sys, pol):
+        if not check_table():
+            return None, DiscordStatusCode.no_table
         plsys = list(
             cur.execute("SELECT polity_id FROM systems where system = ?", (sys,))
         )
