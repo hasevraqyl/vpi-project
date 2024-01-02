@@ -29,6 +29,61 @@ def comma_stringer(bad_list):
 
 class Game(object):
     @classmethod
+    def rollback(cls):
+        cur.execute(
+            """CREATE TABLE polities (
+    polity_id INTEGER   PRIMARY KEY
+                        UNIQUE
+                        NOT NULL,
+    polity_name    TEXT UNIQUE
+                        NOT NULL,
+    polity_desc    TEXT,
+    creds          REAL NOT NULL
+                        DEFAULT (0.0) );"""
+        )
+        polities = [
+            (1, "pogglia", "no sex", 0.0),
+            (2, "ubia", "sex", 0.0),
+        ]
+        cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?)", polities)
+        cur.execute(
+            """CREATE TABLE resources (
+    planet TEXT PRIMARY KEY
+                UNIQUE
+                NOT NULL,
+    RO     REAL NOT NULL
+                DEFAULT (0.0),
+    BP     REAL NOT NULL
+                DEFAULT (0.0),
+    RS     REAL NOT NULL
+                DEFAULT (0.0) );"""
+        )
+        resources = [
+            ("moskvabad", 12.0, 7.0, 0.0),
+            ("rashidun", 12.0, 3.0, 0.0),
+            ("zumbia", 20.0, 4.0, 0.0),
+            ("ubia", 11.0, 6.0, 0.0),
+        ]
+        cur.executemany("INSERT INTO resources VALUES(?, ?, ?, ?)", resources)
+        cur.execute(
+            """CREATE TABLE systems (
+    polity_id INTEGER NOT NULL,
+    system    TEXT    NOT NULL,
+    planet    TEXT    UNIQUE
+                      NOT NULL
+);"""
+        )
+        planets = [
+            (1, "poggl-loire", "moskvabad"),
+            (1, "poggl-loire", "rashidun"),
+            (2, "ub-burgundy", "zumbia"),
+            (2, "ub-burgundy", "ubia"),
+        ]
+        cur.executemany("INSERT INTO systems VALUES(?, ?, ?)", planets)
+        con.commit
+        return DiscordStatusCode.all_clear
+
+    @classmethod
     def turn(cls):
         for row in list(
             cur.execute(

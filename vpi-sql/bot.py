@@ -44,6 +44,15 @@ async def turn(interaction: discord.Interaction):
 
 
 @client.tree.command()
+async def restart(interaction: discord.Interaction):
+    """Перезапускает игру. ВНИМАНИЕ! ВЫ ТОЧНО УВЕРЕНЫ?"""
+    Game.rollback()
+    await interaction.response.send_message(
+        "Игра перезапущена и откачена к начальному состоянию."
+    )
+
+
+@client.tree.command()
 @app_commands.describe(
     first_value="название планеты",
 )
