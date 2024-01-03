@@ -72,7 +72,8 @@ async def planet(interaction: discord.Interaction, first_value: str):
         await interaction.response.send_message("Ошибка. Перезапустите игру.")
     else:
         await interaction.response.send_message(
-            f"Планета {first_value} находится в системе {system}. \nОбщий прирост {abs(resources[0])}; базовая продукция {resources[1]}; накопленных ресурсов {abs(resources[2])}."
+            f"""Планета {first_value} находится в системе {system}.
+            \nОбщий прирост {abs(resources[0])}; базовая продукция {resources[1]}; гражданская продукция {resources[2]}; военная продукция {resources[3]}; накопленных ресурсов {abs(resources[4])}."""
         )
 
 

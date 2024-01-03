@@ -65,16 +65,20 @@ class Game(object):
                 DEFAULT (0.0),
     BP     REAL NOT NULL
                 DEFAULT (0.0),
+    GP     REAL NOT NULL
+                DEFAULT (0.0),
+    VP     REAL NOT NULL
+                DEFAULT (0.0),
     RS     REAL NOT NULL
                 DEFAULT (0.0) );"""
         )
         resources = [
-            ("moskvabad", 12.0, 7.0, 0.0),
-            ("rashidun", 12.0, 3.0, 0.0),
-            ("zumbia", 20.0, 4.0, 0.0),
-            ("ubia", 11.0, 6.0, 0.0),
+            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0),
+            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0),
+            ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0),
+            ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0),
         ]
-        cur.executemany("INSERT INTO resources VALUES(?, ?, ?, ?)", resources)
+        cur.executemany("INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?)", resources)
         cur.execute(
             """CREATE TABLE systems (
     polity_id INTEGER NOT NULL,
@@ -109,22 +113,30 @@ class Game(object):
             ):
                 for row3 in list(
                     cur.execute(
-                        "SELECT RO, BP, RS FROM resources WHERE planet = ?", (row2[1],)
+                        "SELECT RO, BP, RS, GP, VP FROM resources WHERE planet = ?",
+                        (row2[1],),
                     )
                 ):
                     print("resources stored on planet ", row2[1], ": ", abs(row3[2]))
                     """do note resources are stored in NEGATIVE numbers
                     and converted to positive on the point of access
                     idk why i have to do this it breaks otherwise"""
-                    rsnew = row3[2] + (row3[1] - row3[0])
+                    rsnew = (
+                        row3[2]
+                        + (row3[1] - row3[0])
+                        + (row3[3] - row3[0])
+                        + (row3[4] - row3[0])
+                    )
                     cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
                     cur.executemany(
-                        "INSERT INTO resources VALUES(?, ?, ?, ?)",
+                        "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?)",
                         [
                             (
                                 row2[1],
                                 row3[0],
                                 row3[1],
+                                row3[3],
+                                row3[4],
                                 rsnew,
                             ),
                         ],
@@ -147,7 +159,7 @@ class Game(object):
                         ],
                     )
                     con.commit
-            print("credits in polity ", row[1], ": ", row[3])
+        return DiscordStatusCode.all_clear
 
     @classmethod
     def fetch_Planet(cls, pln):
@@ -158,7 +170,9 @@ class Game(object):
             return None, None, DiscordStatusCode.no_elem
         planetsystem = plsys[0][0]
         planetresources = list(
-            cur.execute("SELECT RO, BP, RS FROM resources where planet = ?", (pln,))
+            cur.execute(
+                "SELECT RO, BP, GP, VP, RS FROM resources where planet = ?", (pln,)
+            )
         )[0]
         return planetsystem, planetresources, DiscordStatusCode.all_clear
 
@@ -219,16 +233,20 @@ class Game(object):
         ):
             return DiscordStatusCode.no_elem
         planetresources = list(
-            cur.execute("SELECT RO, BP, RS FROM resources where planet = ?", (pln,))
+            cur.execute(
+                "SELECT RO, BP, RS, GP, VP FROM resources where planet = ?", (pln,)
+            )
         )
         cur.execute("DELETE from resources WHERE planet = ?", (pln,))
         cur.executemany(
-            "INSERT INTO resources VALUES(?, ?, ?, ?)",
+            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?)",
             [
                 (
                     pln,
                     planetresources[0][0],
                     rsrs,
+                    planetresources[0][3],
+                    planetresources[0][4],
                     planetresources[0][2],
                 )
             ],
