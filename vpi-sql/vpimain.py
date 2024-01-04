@@ -313,7 +313,7 @@ class Game(object):
     def build_Building(cls, pln, building):
         if not check_table():
             return DiscordStatusCode.no_table
-        flag, time = Buildings.buildingcheck()
+        flag, time = Buildings.buildingcheck(Buildings, building)
         if not flag:
             return DiscordStatusCode.invalid_elem
         planet = list(

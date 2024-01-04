@@ -22,8 +22,10 @@ class Buildings(object):
         B("Академия", 3.0, 0.0, 0.0, 3),
     }
 
-    def buildingcheck(self, name):
-        for type in self._buildingslist:
+    def buildingcheck(cls, name):
+        print("Введено следующее здание:", name)
+        for type in cls._buildingslist:
+            print(type.name)
             if type.name == name:
-                return True
+                return True, None
         return False, type.buildtime
