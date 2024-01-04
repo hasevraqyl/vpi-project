@@ -27,5 +27,5 @@ class Buildings(object):
         for type in cls._buildingslist:
             print(type.name)
             if type.name == name:
-                return True, None
-        return False, type.buildtime
+                return True, type.buildtime
+        return False, None

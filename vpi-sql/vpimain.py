@@ -41,6 +41,7 @@ class Game(object):
         cur.execute("DROP TABLE IF EXISTS polities")
         cur.execute("DROP TABLE IF EXISTS systems")
         cur.execute("DROP TABLE IF EXISTS resources")
+        cur.execute("DROP TABLE IF EXISTS buildings")
         cur.execute(
             """CREATE TABLE polities (
     polity_id INTEGER   PRIMARY KEY
