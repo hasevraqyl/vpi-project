@@ -7,3 +7,4 @@ class DiscordStatusCode(Enum):
     invalid_elem = 2
     unknown = 3
     no_table = 4
+    redundant_elem = 5

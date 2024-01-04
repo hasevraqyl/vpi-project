@@ -1,5 +1,6 @@
 import sqlite3
 from enum_implement import DiscordStatusCode
+from techs import Buildings
 
 con = sqlite3.connect("vpi.db")
 cur = con.cursor()
@@ -97,7 +98,8 @@ class Game(object):
         cur.execute(
             """CREATE TABLE buildings (
     planet TEXT       NOT NULL,
-    building TEXT     NOT NULL
+    building TEXT     NOT NULL,
+    turns_remains INT NOT NULL
         )"""
         )
         con.commit
@@ -126,7 +128,7 @@ class Game(object):
                     print("resources stored on planet ", row2[1], ": ", abs(row3[2]))
                     """do note resources are stored in NEGATIVE numbers
                     and converted to positive on the point of access
-                    idk why i have to do this it breaks otherwise"""
+                    idk why i have to do this it breaks otherwise (actually i now know why nvm)"""
                     rsnew = (
                         row3[2]
                         + (row3[1] - row3[0])
@@ -306,3 +308,55 @@ class Game(object):
             )
         con.commit()
         return plname[0][0], DiscordStatusCode.all_clear
+
+    @classmethod
+    def build_Building(cls, pln, building):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        flag, time = Buildings.buildingcheck()
+        if not flag:
+            return DiscordStatusCode.invalid_elem
+        planet = list(
+            cur.execute("SELECT planet from systems where planet = ?", (pln,))
+        )
+        if len(planet) == 0:
+            return DiscordStatusCode.no_elem
+        oldbuildings = list(
+            cur.execute("SELECT building from buildings where planet = ?", (pln,))
+        )
+        for oldbuilding in oldbuildings:
+            if oldbuilding[0] == building:
+                return DiscordStatusCode.redundant_elem
+        cur.executemany(
+            "INSERT INTO buildings VALUES(?, ?, ?)",
+            [
+                (
+                    pln,
+                    building,
+                    time,
+                )
+            ],
+        )
+        con.commit()
+        return DiscordStatusCode.all_clear
+
+    @classmethod
+    def planet_Buildings(cls, pln):
+        if not check_table():
+            return None, DiscordStatusCode.no_table
+        buildingslist = list(
+            cur.execute(
+                "SELECT building, turns_remains from buildings where planet = ?", (pln,)
+            )
+        )
+        if len(buildingslist) == 0:
+            return None, DiscordStatusCode.no_elem
+        string = ""
+        for building in buildingslist:
+            if building[1] != 0:
+                string += (
+                    f"\n {building[0]}. До окончания постройки {building[0]} ходов."
+                )
+            else:
+                string += f"\n {building[0]}"
+        return string, DiscordStatusCode.all_clear

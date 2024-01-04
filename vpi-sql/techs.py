@@ -12,12 +12,18 @@ class Buildings(object):
             self.cost = cost
             self.res = res
             self.lim = lim
-            self, buildtime = buildtime
+            self.buildtime = buildtime
 
-    buildingslist = [
+    _buildingslist = {
         B("Основные промзоны", 2.0, 0.0, 0.0, 3),
         B("ВПК", 3.0, 0.0, 0.0, 5),
         B("Гражданский сектор", 2.0, 0.0, 0.0, 2),
         B("Технопарк", 5.0, 0.0, 0.0, 10),
-        B("Акакдемия", 3.0, 0.0, 0.0, 3),
-    ]
+        B("Академия", 3.0, 0.0, 0.0, 3),
+    }
+
+    def buildingcheck(self, name):
+        for type in self._buildingslist:
+            if type.name == name:
+                return True
+        return False, type.buildtime

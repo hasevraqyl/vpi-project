@@ -134,6 +134,30 @@ async def planet_add_bp(
 
 
 @client.tree.command()
+@app_commands.describe(first_value="название планеты", second_value="название здания")
+async def planet_build(
+    interaction: discord.Interaction, first_value: str, second_value: str
+):
+    if interaction.user.id in auth_user_ids:
+        """Начинаем строительство на планете."""
+        status = Game.build_Building(first_value, second_value)
+        if status.name == "no_table":
+            await interaction.response.send_message("Ошибка. Перезапустите игру.")
+        elif status.name == "no_elem":
+            await interaction.response.send_message("Такой планеты нету.")
+        elif status.name == "invalid_elem":
+            await interaction.response.send_message("Такого здания не бывает")
+        elif status.name == "redundant_elem":
+            await interaction.response.send_message("Такое здание уже строится")
+        else:
+            await interaction.response.send_message(
+                f"Постройка здания {second_value} успешно начата на планете {first_value}."
+            )
+    else:
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
+
+
+@client.tree.command()
 @app_commands.describe(
     first_value="название cистемы", second_value="название новой правящей империи"
 )
