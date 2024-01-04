@@ -94,6 +94,12 @@ class Game(object):
             (2, "ub-burgundy", "ubia"),
         ]
         cur.executemany("INSERT INTO systems VALUES(?, ?, ?)", planets)
+        cur.execute(
+            """CREATE TABLE buildings (
+    planet TEXT       NOT NULL,
+    building TEXT     NOT NULL
+        )"""
+        )
         con.commit
         return DiscordStatusCode.all_clear
 
