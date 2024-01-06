@@ -113,6 +113,25 @@ async def buildings(interaction: discord.Interaction, first_value: str):
 
 @client.tree.command()
 @app_commands.describe(
+    first_value="название планеты",
+)
+async def caqlculate_ql(interaction: discord.Interaction, first_value: str):
+    """Информация об уровне жизни на планете."""
+    builds, status = Game.calculate_ql(first_value)
+    if status.name == "no_elem":
+        await interaction.response.send_message(
+            "Такой планеты нету либо там вообще жить негде."
+        )
+    elif status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
+    else:
+        await interaction.response.send_message(
+            f"На планете {first_value} уровень жизни равен {builds}."
+        )
+
+
+@client.tree.command()
+@app_commands.describe(
     first_value="название империи",
 )
 async def polity(interaction: discord.Interaction, first_value: str):
@@ -124,7 +143,7 @@ async def polity(interaction: discord.Interaction, first_value: str):
         await interaction.response.send_message("Ошибка. Перезапустите игру.")
     else:
         await interaction.response.send_message(
-            f"Империя {first_value} имеет баланс в {creds} кредитов. \nВ состав империи входят следующие планеты: {systems}"
+            f"Империя {first_value} имеет баланс в {creds} кредитов. \nВ состав империи входят следующие системы: {systems}"
         )
 
 
@@ -163,9 +182,11 @@ async def planet_build(
         elif status.name == "no_elem":
             await interaction.response.send_message("Такой планеты нету.")
         elif status.name == "invalid_elem":
-            await interaction.response.send_message("Такого здания не бывает")
+            await interaction.response.send_message("Такого здания не бывает.")
         elif status.name == "redundant_elem":
-            await interaction.response.send_message("Такое здание уже строится")
+            await interaction.response.send_message(
+                "Достигнут лимит зданий данного типа."
+            )
         else:
             await interaction.response.send_message(
                 f"Постройка здания {second_value} успешно начата на планете {first_value}."

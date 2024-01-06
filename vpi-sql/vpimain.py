@@ -36,7 +36,43 @@ def check_table():
     return True
 
 
+def calculate_bp(bp_total, builds):
+    for b in builds:
+        if b[0] == "Основные промзоны" and b[1] == 0:
+            bp_total = bp_total + 3.0
+    return bp_total
+
+
 class Game(object):
+    @classmethod
+    def calculate_ql(cls, pln):
+        if not check_table():
+            return None, DiscordStatusCode.no_table
+        buildings = list(
+            cur.execute(
+                "SELECT building, turns_remains FROM buildings where planet = ?", (pln,)
+            )
+        )
+        if len(buildings) == 0:
+            return None, DiscordStatusCode.no_elem
+        ql = 0.0
+        qu_n = 0.0
+        for build in buildings:
+            if build[0] == (
+                "Кварталы I" or "Кварталы II" or "Кварталы III" or "Трущобы"
+            ):
+                if build[1] == 0:
+                    qu_n += 1.0
+        res = list(
+            cur.execute(
+                "SELECT RO, BP, GP, VP FROM resources WHERE planet = ?",
+                (pln,),
+            )
+        )[0]
+        pr_cr = max(res[0], res[1])
+        ql = 50 * qu_n / (pr_cr + res[2] + res[3])
+        return ql, DiscordStatusCode.all_clear
+
     @classmethod
     def rollback(cls):
         print("откачено!!!!!!")
@@ -140,12 +176,14 @@ class Game(object):
                     and converted to positive on the point of access
                     idk why i have to do this it breaks otherwise (actually i now know why nvm)
                     """
-                    rsnew = (
-                        row3[2]
-                        + (row3[1] - row3[0])
-                        + (row3[3] - row3[0])
-                        + (row3[4] - row3[0])
+                    builds = list(
+                        cur.execute(
+                            "select building, turns_remains from buildings where planet = ?",
+                            (row2[1],),
+                        )
                     )
+                    bp = calculate_bp(row3[0], builds)
+                    rsnew = row3[2] + (bp - row3[0])
                     cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
                     cur.executemany(
                         "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?)",
@@ -177,18 +215,42 @@ class Game(object):
                             )
                         ],
                     )
-                    for row4 in list(
-                        cur.execute(
-                            "SELECT building, turns_remains from buildings where planet = ?",
-                            (row2[1],),
-                        )
-                    ):
-                        cur.execute(
-                            "DELETE from buildings where planet = ?", (row2[1],)
+                    for row4 in builds:
+                        cur.executemany(
+                            "DELETE from buildings where planet = ? and building = ? and turns_remains = ?",
+                            [
+                                (
+                                    row2[1],
+                                    row4[0],
+                                    row4[1],
+                                )
+                            ],
                         )
                         turns = row4[1]
                         if turns > 0:
                             turns = turns - 1
+                            newval2 = list(
+                                cur.execute(
+                                    "SELECT creds FROM polities WHERE polity_id = ?",
+                                    (row[0],),
+                                )
+                            )[0][0]
+                            cur.execute(
+                                "DELETE from polities WHERE polity_id = ?", (row[0],)
+                            )
+                            cur.executemany(
+                                "INSERT INTO polities VALUES(?, ?, ?, ?)",
+                                [
+                                    (
+                                        row[0],
+                                        row[1],
+                                        row[2],
+                                        newval2
+                                        - Buildings.costfetch(Buildings, row4[0]),
+                                    )
+                                ],
+                            )
+                        print(row4[1], row4[0])
                         cur.executemany(
                             "INSERT INTO buildings VALUES(?, ?, ?)",
                             [
@@ -390,8 +452,11 @@ class Game(object):
         oldbuildings = list(
             cur.execute("SELECT building from buildings where planet = ?", (pln,))
         )
+        n = 0
         for oldbuilding in oldbuildings:
             if oldbuilding[0] == building:
+                n += 1
+            if n == Buildings.buildingfetch(Buildings, oldbuilding[0]):
                 return DiscordStatusCode.redundant_elem
         cur.executemany(
             "INSERT INTO buildings VALUES(?, ?, ?)",
