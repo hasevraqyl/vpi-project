@@ -23,9 +23,7 @@ class Buildings(object):
     }
 
     def buildingcheck(cls, name):
-        print("Введено следующее здание:", name)
         for type in cls._buildingslist:
-            print(type.name)
             if type.name == name:
                 return True, type.buildtime
         return False, None

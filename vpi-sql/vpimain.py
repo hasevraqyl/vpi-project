@@ -126,10 +126,10 @@ class Game(object):
                         (row2[1],),
                     )
                 ):
-                    print("resources stored on planet ", row2[1], ": ", abs(row3[2]))
                     """do note resources are stored in NEGATIVE numbers
                     and converted to positive on the point of access
-                    idk why i have to do this it breaks otherwise (actually i now know why nvm)"""
+                    idk why i have to do this it breaks otherwise (actually i now know why nvm)
+                    """
                     rsnew = (
                         row3[2]
                         + (row3[1] - row3[0])
@@ -167,6 +167,29 @@ class Game(object):
                             )
                         ],
                     )
+                    for row4 in list(
+                        cur.execute(
+                            "SELECT building, turns_remains from buildings where planet = ?",
+                            (row2[1],),
+                        )
+                    ):
+                        cur.execute(
+                            "DELETE from buildings where planet = ?", (row2[1],)
+                        )
+                        turns = row4[1]
+                        if turns > 0:
+                            turns = turns - 1
+                        cur.executemany(
+                            "INSERT INTO buildings VALUES(?, ?, ?)",
+                            [
+                                (
+                                    row2[1],
+                                    row4[0],
+                                    turns,
+                                )
+                            ],
+                        )
+
                     con.commit
         return DiscordStatusCode.all_clear
 
@@ -356,7 +379,7 @@ class Game(object):
         for building in buildingslist:
             if building[1] != 0:
                 string += (
-                    f"\n {building[0]}. До окончания постройки {building[0]} ходов."
+                    f"\n {building[0]}. До окончания постройки {building[1]} ходов."
                 )
             else:
                 string += f"\n {building[0]}"

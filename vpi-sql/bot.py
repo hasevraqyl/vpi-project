@@ -96,6 +96,23 @@ async def system(interaction: discord.Interaction, first_value: str):
 
 @client.tree.command()
 @app_commands.describe(
+    first_value="название планеты",
+)
+async def buildings(interaction: discord.Interaction, first_value: str):
+    """Информация о постройках на планете."""
+    builds, status = Game.planet_Buildings(first_value)
+    if status.name == "no_elem":
+        await interaction.response.send_message("Такой системы нету.")
+    elif status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
+    else:
+        await interaction.response.send_message(
+            f"На планете {first_value} находятся следующие постройки: {builds}"
+        )
+
+
+@client.tree.command()
+@app_commands.describe(
     first_value="название империи",
 )
 async def polity(interaction: discord.Interaction, first_value: str):
