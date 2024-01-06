@@ -1,6 +1,6 @@
-from ITurnBased import ITurnBased
-from IdentityBase import IdentityBase
-from Resource import Resource
+from trash.ITurnBased import ITurnBased
+from trash.IdentityBase import IdentityBase
+from trash.Resource import Resource
 
 
 class Province(IdentityBase, ITurnBased):

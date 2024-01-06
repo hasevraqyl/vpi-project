@@ -1,8 +1,8 @@
-from Polity import Polity
-from Province import Province
-from Material import Material
-from System import System
-from ProvinceResource import ProvinceResource
+from trash.Polity import Polity
+from trash.Province import Province
+from trash.Material import Material
+from trash.System import System
+from trash.ProvinceResource import ProvinceResource
 
 rossiya = Polity()
 rossiya.set_Name("rossiya")

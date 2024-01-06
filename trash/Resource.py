@@ -1,4 +1,4 @@
-from Material import Material
+from trash.Material import Material
 
 
 class Resource(object):

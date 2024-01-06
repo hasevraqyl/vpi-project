@@ -1,5 +1,5 @@
-from ITurnBased import ITurnBased
-from IdentityBase import IdentityBase
+from trash.ITurnBased import ITurnBased
+from trash.IdentityBase import IdentityBase
 
 
 class System(IdentityBase, ITurnBased):

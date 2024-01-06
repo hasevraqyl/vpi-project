@@ -1,6 +1,6 @@
-from ITurnBased import ITurnBased
-from IResourceHolder import IResourceHolder
-from IdentityBase import IdentityBase
+from trash.ITurnBased import ITurnBased
+from trash.IResourceHolder import IResourceHolder
+from trash.IdentityBase import IdentityBase
 
 
 class Polity(IdentityBase, IResourceHolder, ITurnBased):

@@ -1,4 +1,4 @@
-from IHasIdentity import IHASIdentity
+from trash.IHasIdentity import IHASIdentity
 
 
 class IdentityBase(IHASIdentity):

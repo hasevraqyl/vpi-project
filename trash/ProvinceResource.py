@@ -1,5 +1,5 @@
-from Resource import Resource
-from Material import Material
+from trash.Resource import Resource
+from trash.Material import Material
 
 
 class ProvinceResource(Resource):

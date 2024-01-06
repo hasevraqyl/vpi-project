@@ -1,4 +1,4 @@
-from IdentityBase import IdentityBase
+from trash.IdentityBase import IdentityBase
 
 
 class Material(IdentityBase):
