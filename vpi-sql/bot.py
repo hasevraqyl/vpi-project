@@ -83,14 +83,14 @@ async def planet(interaction: discord.Interaction, first_value: str):
 )
 async def system(interaction: discord.Interaction, first_value: str):
     """Информация о системе."""
-    polity, planets, status = Game.fetch_System(first_value)
+    polity, planets, st, status = Game.fetch_System(first_value)
     if status.name == "no_elem":
         await interaction.response.send_message("Такой системы нету.")
     elif status.name == "no_table":
         await interaction.response.send_message("Ошибка. Перезапустите игру.")
     else:
         await interaction.response.send_message(
-            f"Система {first_value} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets}"
+            f"Система {first_value} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets} {st}"
         )
 
 
@@ -169,6 +169,28 @@ async def planet_build(
         else:
             await interaction.response.send_message(
                 f"Постройка здания {second_value} успешно начата на планете {first_value}."
+            )
+    else:
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
+
+
+@client.tree.command()
+@app_commands.describe(
+    first_value="название системы",
+)
+async def system_build(interaction: discord.Interaction, first_value: str):
+    if interaction.user.id in auth_user_ids:
+        """Построить в системе станцию."""
+        status = Game.build_Station(first_value)
+        if status.name == "no_table":
+            await interaction.response.send_message("Ошибка. Перезапустите игру.")
+        elif status.name == "no_elem":
+            await interaction.response.send_message("Такой системы нету.")
+        elif status.name == "redundant_elem":
+            await interaction.response.send_message("В системе уже есть станция.")
+        else:
+            await interaction.response.send_message(
+                f"Пoстройка станции в системе {first_value} успешно начата."
             )
     else:
         await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")

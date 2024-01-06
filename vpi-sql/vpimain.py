@@ -42,6 +42,7 @@ class Game(object):
         cur.execute("DROP TABLE IF EXISTS systems")
         cur.execute("DROP TABLE IF EXISTS resources")
         cur.execute("DROP TABLE IF EXISTS buildings")
+        cur.execute("DROP TABLE IF EXISTS stations")
         cur.execute(
             """CREATE TABLE polities (
     polity_id INTEGER   PRIMARY KEY
@@ -101,6 +102,13 @@ class Game(object):
     planet TEXT       NOT NULL,
     building TEXT     NOT NULL,
     turns_remains INT NOT NULL
+        )"""
+        )
+        cur.execute(
+            """CREATE TABLE stations (
+    system TEXT       NOT NULL,
+    station TEXT     NOT NULL,
+    turns_remains INT  NOT NULL
         )"""
         )
         con.commit
@@ -211,13 +219,17 @@ class Game(object):
     @classmethod
     def fetch_System(cls, sys):
         if not check_table():
-            return None, None, DiscordStatusCode.no_table
+            return None, None, None, DiscordStatusCode.no_table
         plsys = list(cur.execute("SELECT system FROM systems where system = ?", (sys,)))
         if len(plsys) == 0:
-            return None, None, DiscordStatusCode.no_elem
+            return None, None, None, DiscordStatusCode.no_elem
         planetlist = list(
             cur.execute("SELECT planet FROM systems where system = ?", (sys,))
         )
+        sst = ""
+        sl = list(cur.execute("SELECT station from stations where system = ?", (sys,)))
+        if len(sl) > 0:
+            sst = "В системе есть станция."
         planetstring = comma_stringer(planetlist)
         polity = list(
             cur.execute(
@@ -231,7 +243,7 @@ class Game(object):
                 ),
             )
         )[0][0]
-        return polity, planetstring, DiscordStatusCode.all_clear
+        return polity, planetstring, sst, DiscordStatusCode.all_clear
 
     @classmethod
     def fetch_Polity(cls, pol):
@@ -384,3 +396,32 @@ class Game(object):
             else:
                 string += f"\n {building[0]}"
         return string, DiscordStatusCode.all_clear
+
+    @classmethod
+    def build_Station(cls, sys):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        ssystem = list(
+            cur.execute("SELECT system from systems where system = ?", (sys,))
+        )
+        if len(ssystem) == 0:
+            return DiscordStatusCode.no_elem
+        station = list(
+            cur.execute(
+                "SELECT station, turns_remains from stations where system = ?", (sys,)
+            )
+        )
+        if len(station) > 0:
+            return DiscordStatusCode.redundant_elem
+        cur.executemany(
+            "INSERT INTO stations VALUES(?, ?, ?)",
+            [
+                (
+                    sys,
+                    "station",
+                    3,
+                )
+            ],
+        )
+        con.commit
+        return DiscordStatusCode.all_clear
