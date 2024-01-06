@@ -199,6 +199,7 @@ class Game(object):
                                 )
                             ],
                         )
+                    con.commit()
                 station = list(
                     cur.execute(
                         "SELECT station, turns_remains from stations where system = ?",
