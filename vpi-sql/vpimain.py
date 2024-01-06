@@ -31,6 +31,7 @@ def comma_stringer(bad_list):
 def check_table():
     r = cur.execute("SELECT name from sqlite_master WHERE name = 'systems'")
     if r.fetchone() is None:
+        print("таблицы нету")
         return False
     return True
 
@@ -38,6 +39,7 @@ def check_table():
 class Game(object):
     @classmethod
     def rollback(cls):
+        print("откачено!!!!!!")
         cur.execute("DROP TABLE IF EXISTS polities")
         cur.execute("DROP TABLE IF EXISTS systems")
         cur.execute("DROP TABLE IF EXISTS resources")
@@ -197,6 +199,27 @@ class Game(object):
                                 )
                             ],
                         )
+                station = list(
+                    cur.execute(
+                        "SELECT station, turns_remains from stations where system = ?",
+                        (row2[0],),
+                    )
+                )
+                if len(station) > 0:
+                    turns2 = station[0][1]
+                    if turns2 > 0:
+                        turns2 = turns2 - 1
+                        cur.execute("DELETE from stations where system = ?", (row2[0],))
+                        cur.executemany(
+                            "INSERT INTO stations VALUES(?, ?, ?)",
+                            [
+                                (
+                                    row2[0],
+                                    station[0][0],
+                                    turns2,
+                                )
+                            ],
+                        )
 
                     con.commit
         return DiscordStatusCode.all_clear
@@ -227,8 +250,14 @@ class Game(object):
             cur.execute("SELECT planet FROM systems where system = ?", (sys,))
         )
         sst = ""
-        sl = list(cur.execute("SELECT station from stations where system = ?", (sys,)))
-        if len(sl) > 0:
+        sl = list(
+            cur.execute(
+                "SELECT station, turns_remains from stations where system = ?", (sys,)
+            )
+        )
+        if len(sl) > 0 and sl[0][1] > 0:
+            sst = f"В системе есть строящаяся станция, до завершения {sl[0][1]} ходов."
+        elif len(sl) > 0 and sl[0][1] == 0:
             sst = "В системе есть станция."
         planetstring = comma_stringer(planetlist)
         polity = list(
