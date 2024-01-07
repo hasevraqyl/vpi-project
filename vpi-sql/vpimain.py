@@ -111,15 +111,17 @@ class Game(object):
     VP     REAL NOT NULL
                 DEFAULT (0.0),
     RS     REAL NOT NULL
-                DEFAULT (0.0) );"""
+                DEFAULT (0.0),
+    pop    REAL NOT NULL
+                DEFAULT (0.0));"""
         )
         resources = [
-            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0),
-            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0),
-            ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0),
-            ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0),
+            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 10.0),
+            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0),
+            ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0, 10.0),
+            ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0, 4.0),
         ]
-        cur.executemany("INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?)", resources)
+        cur.executemany("INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)", resources)
         cur.execute(
             """CREATE TABLE systems (
     polity_id INTEGER NOT NULL,
@@ -168,7 +170,7 @@ class Game(object):
             ):
                 for row3 in list(
                     cur.execute(
-                        "SELECT RO, BP, RS, GP, VP FROM resources WHERE planet = ?",
+                        "SELECT RO, BP, RS, GP, VP, pop FROM resources WHERE planet = ?",
                         (row2[1],),
                     )
                 ):
@@ -182,11 +184,15 @@ class Game(object):
                             (row2[1],),
                         )
                     )
-                    bp = calculate_bp(row3[0], builds)
-                    rsnew = row3[2] + (bp - row3[0])
+                    coefpop = row3[5] / (row3[0] + row3[4] + row3[5])
+                    if coefpop > 1:
+                        coefpop = 1
+                    bp = calculate_bp(row3[1], builds)
+                    rsnew = row3[2] + ((bp - row3[0]) * coefpop)
+                    popnew = row3[5] * 1.01
                     cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
                     cur.executemany(
-                        "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?)",
+                        "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)",
                         [
                             (
                                 row2[1],
@@ -195,6 +201,7 @@ class Game(object):
                                 row3[3],
                                 row3[4],
                                 rsnew,
+                                popnew,
                             ),
                         ],
                     )
@@ -211,7 +218,7 @@ class Game(object):
                                 row[0],
                                 row[1],
                                 row[2],
-                                newval + row3[1],
+                                newval + (row3[1] * coefpop),
                             )
                         ],
                     )
@@ -297,7 +304,7 @@ class Game(object):
         planetsystem = plsys[0][0]
         planetresources = list(
             cur.execute(
-                "SELECT RO, BP, GP, VP, RS FROM resources where planet = ?", (pln,)
+                "SELECT RO, BP, GP, VP, RS, pop FROM resources where planet = ?", (pln,)
             )
         )[0]
         return planetsystem, planetresources, DiscordStatusCode.all_clear
@@ -370,7 +377,7 @@ class Game(object):
             return DiscordStatusCode.no_elem
         planetresources = list(
             cur.execute(
-                "SELECT RO, BP, RS, GP, VP FROM resources where planet = ?", (pln,)
+                "SELECT RO, BP, RS, GP, VP, pop FROM resources where planet = ?", (pln,)
             )
         )
         cur.execute("DELETE from resources WHERE planet = ?", (pln,))
@@ -384,6 +391,7 @@ class Game(object):
                     planetresources[0][3],
                     planetresources[0][4],
                     planetresources[0][2],
+                    planetresources[0][6],
                 )
             ],
         )
