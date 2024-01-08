@@ -43,7 +43,77 @@ def calculate_bp(bp_total, builds):
     return bp_total
 
 
+def calc_pop():
+    li = list(cur.execute("SELECT polity_1, polity_2 from agreements"))
+    agrl = []
+    for e in li:
+        for zone in agrl:
+            if e[0] in zone and e[1] not in zone:
+                zone.append(e[1])
+            elif e[0] not in zone and e[1] not in zone:
+                agrl.append([e[0], e[1]])
+    lipol = list(cur.execute("SELECT polity_id from polities"))
+    for e in lipol:
+        f = False
+        for zone in agrl:
+            if e[0] in zone:
+                f = True
+                break
+        if not f:
+            agrl.append([[e[0]]])
+    print(agrl)
+    for zone in agrl:
+        array = []
+        pops = []
+        for polity in zone:
+            for planet in list(
+                cur.execute(
+                    "SELECT planet from systems where polity_id = ?", tuple(polity)
+                )
+            ):
+                res = list(
+                    cur.execute(
+                        "SELECT pop, RO, GP, VP from resources where planet = ?",
+                        (planet),
+                    )
+                )[0]
+                housing = len(
+                    list(
+                        cur.execute(
+                            """SELECT building from buildings WHERE building = ('Кварталы I'
+                                                    OR building = 'Кварталы II'
+                                                    OR building = 'Кварталы III'
+                                                    OR building = 'Кварталы III'
+                                                    OR building = 'Трущобы')
+                                                    AND planet = ?""",
+                            (planet),
+                        )
+                    )
+                )
+                jobs = res[1] + res[2] + res[3]
+                total = housing * 0.5 + jobs
+                pops.append(res[0])
+                array.append(total)
+        s = sum(array)
+        for i in range(len(array)):
+            array[i] = array[i] / (s * 5)
+        matrix = []
+        for i in range(len(array)):
+            row = []
+            for j in range(len(array)):
+                if j == i:
+                    row.append(1 - array[j])
+                else:
+                    row.append(array[j])
+            matrix.append(row)
+        print(matrix)
+
+
 class Game(object):
+    @classmethod
+    def debug_pop(cls):
+        calc_pop()
+
     @classmethod
     def calculate_ql(cls, pln):
         if not check_table():

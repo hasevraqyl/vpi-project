@@ -48,6 +48,13 @@ async def turn(interaction: discord.Interaction):
 
 
 @client.tree.command()
+async def смерть(interaction: discord.Interaction):
+    """НЕ ТРОГАЙТЕ"""
+    Game.debug_pop()
+    await interaction.response.send_message("Тучи сгущаются.")
+
+
+@client.tree.command()
 async def restart(interaction: discord.Interaction):
     if interaction.user.id in auth_user_ids:
         """Перезапускает игру. ВНИМАНИЕ! ВЫ ТОЧНО УВЕРЕНЫ?"""
