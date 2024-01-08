@@ -65,12 +65,13 @@ class Game(object):
                     qu_n += 1.0
         res = list(
             cur.execute(
-                "SELECT RO, BP, GP, VP FROM resources WHERE planet = ?",
+                "SELECT pop FROM resources WHERE planet = ?",
                 (pln,),
             )
-        )[0]
-        pr_cr = max(res[0], res[1])
-        ql = 50 * qu_n / (pr_cr + res[2] + res[3])
+        )[
+            0
+        ][0]
+        ql = 50 * qu_n / (res)
         return ql, DiscordStatusCode.all_clear
 
     @classmethod
@@ -151,6 +152,12 @@ class Game(object):
     turns_remains INT  NOT NULL
         )"""
         )
+        cur.execute(
+            """CREATE TABLE agreements (
+    polity_1 TEXT    NOT NULL,
+    polity_2 TEXT    NOT NULL
+            )"""
+        )
         con.commit
         return DiscordStatusCode.all_clear
 
@@ -184,11 +191,11 @@ class Game(object):
                             (row2[1],),
                         )
                     )
-                    coefpop = row3[5] / (row3[0] + row3[4] + row3[5])
+                    coefpop = row3[5] / (abs(row3[0]) + row3[3] + row3[4])
                     if coefpop > 1:
                         coefpop = 1
                     bp = calculate_bp(row3[1], builds)
-                    rsnew = row3[2] + ((bp - row3[0]) * coefpop)
+                    rsnew = row3[2] + ((row3[0] - bp) * coefpop)
                     popnew = row3[5] * 1.01
                     cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
                     cur.executemany(
@@ -257,7 +264,6 @@ class Game(object):
                                     )
                                 ],
                             )
-                        print(row4[1], row4[0])
                         cur.executemany(
                             "INSERT INTO buildings VALUES(?, ?, ?)",
                             [
@@ -527,4 +533,39 @@ class Game(object):
             ],
         )
         con.commit
+        return DiscordStatusCode.all_clear
+
+    @classmethod
+    def agree(cls, pol_1, pol_2):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        ids = []
+        for pol in [pol_1, pol_2]:
+            p = list(
+                cur.execute(
+                    "SELECT polity_id from polities where polity_name = ?",
+                    (pol,),
+                ),
+            )
+            if len(p[0]) == 0:
+                return DiscordStatusCode.no_elem
+            ids.append(p[0][0])
+        cur.executemany(
+            "INSERT INTO agreements VALUES(?, ?)",
+            [
+                (
+                    ids[0],
+                    ids[1],
+                )
+            ],
+        )
+        cur.executemany(
+            "INSERT INTO agreements VALUES(?, ?)",
+            [
+                (
+                    ids[1],
+                    ids[0],
+                )
+            ],
+        )
         return DiscordStatusCode.all_clear

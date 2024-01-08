@@ -74,7 +74,7 @@ async def planet(interaction: discord.Interaction, first_value: str):
         await interaction.response.send_message(
             f"""Планета {first_value} находится в системе {system}.
             \n Общий прирост {abs(resources[0])}; базовая продукция {resources[1]}; гражданская продукция {resources[2]}; военная продукция {resources[3]}; накопленных ресурсов {abs(resources[4])}.
-            \n Население {resources[5]}. Коэффициент занятости {resources[5]/(abs(resources[0])+resources[2]+resources[3])}."""
+            \n Население {round(resources[5], 2)}. Коэффициент занятости {round(resources[5]/(abs(resources[0])+resources[2]+resources[3]), 2)}."""
         )
 
 
@@ -241,6 +241,30 @@ async def transfer(
         else:
             await interaction.response.send_message(
                 f"Система {first_value} передана от империи {oldsys} империи {second_value}."
+            )
+    else:
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
+
+
+@client.tree.command()
+@app_commands.describe(
+    first_value="название первой империи", second_value="название второй империи"
+)
+async def shengen(
+    interaction: discord.Interaction, first_value: str, second_value: str
+):
+    if interaction.user.id in auth_user_ids:
+        """Передаем систему от одной империи к другой."""
+        status = Game.agree(first_value, second_value)
+        if status.name == "no_elem":
+            await interaction.response.send_message(
+                "Проверьте правильность параметров; империи не существует."
+            )
+        elif status.name == "no_table":
+            await interaction.response.send_message("Ошибка. Перезапустите игру.")
+        else:
+            await interaction.response.send_message(
+                f"Заключено миграционное соглашение между империями {first_value} и {second_value}."
             )
     else:
         await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
