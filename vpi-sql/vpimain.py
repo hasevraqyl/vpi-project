@@ -1,6 +1,8 @@
 import sqlite3
 from enum_implement import DiscordStatusCode
 from techs import Buildings
+import numpy as np
+from numpy import linalg as LA
 
 con = sqlite3.connect("vpi.db")
 cur = con.cursor()
@@ -107,6 +109,13 @@ def calc_pop():
                     row.append(array[j])
             matrix.append(row)
         print(matrix)
+        a = np.array(matrix)
+        b = np.array(pops)
+        c = a.dot(b)
+        print(c)
+        eigva, eigve = LA.eig(c)
+        print(eigva)
+        print(eigve)
 
 
 class Game(object):
@@ -638,4 +647,5 @@ class Game(object):
                 )
             ],
         )
+        con.commit()
         return DiscordStatusCode.all_clear
