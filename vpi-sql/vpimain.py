@@ -110,10 +110,15 @@ def calc_pop():
             matrix.append(row)
         print(matrix)
         a = np.array(matrix)
-        b = np.array(pops)
-        c = a.dot(b)
-        print(c)
-        eigva, eigve = LA.eig(c)
+        eigva, eigve = LA.eig(a)
+        itemindex = np.where(eigva == 1.0)
+        print(f"this is the item index: {itemindex[0]}")
+        eigvec = []
+        for k in eigve:
+            for h in range(k.size):
+                if h == itemindex[0]:
+                    eigvec.append(k[h])
+        print(eigvec)
         print(eigva)
         print(eigve)
 
