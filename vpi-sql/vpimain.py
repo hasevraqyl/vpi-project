@@ -112,15 +112,18 @@ def calc_pop():
         a = np.array(matrix)
         eigva, eigve = LA.eig(a)
         itemindex = np.where(eigva == 1.0)
-        print(f"this is the item index: {itemindex[0]}")
+
         eigvec = []
         for k in eigve:
             for h in range(k.size):
                 if h == itemindex[0]:
                     eigvec.append(k[h])
-        print(eigvec)
-        print(eigva)
-        print(eigve)
+        sm = sum(eigvec)
+        for e in eigvec:
+            e = abs(e / sm)
+        ea = np.array(eigvec)
+        ep = np.array(sum(pops))
+        print("новое население:", np.multiply(ea, ep))
 
 
 class Game(object):
