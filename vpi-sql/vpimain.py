@@ -2,7 +2,6 @@ import sqlite3
 from enum_implement import DiscordStatusCode
 from techs import Buildings
 import numpy as np
-from numpy import linalg as LA
 
 con = sqlite3.connect("vpi.db")
 cur = con.cursor()
@@ -63,16 +62,16 @@ def calc_pop():
                 break
         if not f:
             agrl.append([[e[0]]])
-    print(agrl)
     for zone in agrl:
         array = []
         pops = []
         for polity in zone:
-            for planet in list(
+            planets = list(
                 cur.execute(
                     "SELECT planet from systems where polity_id = ?", tuple(polity)
                 )
-            ):
+            )
+            for planet in planets:
                 res = list(
                     cur.execute(
                         "SELECT pop, RO, GP, VP from resources where planet = ?",
@@ -98,32 +97,36 @@ def calc_pop():
                 array.append(total)
         s = sum(array)
         for i in range(len(array)):
-            array[i] = array[i] / (s * 5)
-        matrix = []
-        for i in range(len(array)):
-            row = []
-            for j in range(len(array)):
-                if j == i:
-                    row.append(1 - array[j])
-                else:
-                    row.append(array[j])
-            matrix.append(row)
-        print(matrix)
-        a = np.array(matrix)
-        eigva, eigve = LA.eig(a)
-        itemindex = np.where(eigva == 1.0)
-
-        eigvec = []
-        for k in eigve:
-            for h in range(k.size):
-                if h == itemindex[0]:
-                    eigvec.append(k[h])
-        sm = sum(eigvec)
-        for e in eigvec:
-            e = abs(e / sm)
-        ea = np.array(eigvec)
+            array[i] = array[i] / s
+        ea = np.array(array)
         ep = np.array(sum(pops))
-        print("новое население:", np.multiply(ea, ep))
+        eq = np.multiply(ea, ep)
+        newpop = []
+        for i in range(len(pops)):
+            newpop.append(pops[i] * 0.9 + eq[i] * 0.1)
+        for i in range(len(planets)):
+            res = list(
+                cur.execute(
+                    "SELECT RO, BP, GP, VP, RS, pop from resources where planet = ?",
+                    (planet),
+                )
+            )[0]
+            cur.execute("DELETE from resources where planet = ?", (planets[i]))
+            cur.executemany(
+                "INSERT into resources VALUES(?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        planets[i][0],
+                        res[0],
+                        res[1],
+                        res[2],
+                        res[3],
+                        res[4],
+                        newpop[i],
+                    )
+                ],
+            )
+        con.commit()
 
 
 class Game(object):
@@ -169,6 +172,7 @@ class Game(object):
         cur.execute("DROP TABLE IF EXISTS resources")
         cur.execute("DROP TABLE IF EXISTS buildings")
         cur.execute("DROP TABLE IF EXISTS stations")
+        cur.execute("DROP TABLE IF EXISTS agreements")
         cur.execute(
             """CREATE TABLE polities (
     polity_id INTEGER   PRIMARY KEY
@@ -383,8 +387,9 @@ class Game(object):
                                 )
                             ],
                         )
+        calc_pop()
+        con.commit
 
-                    con.commit
         return DiscordStatusCode.all_clear
 
     @classmethod
