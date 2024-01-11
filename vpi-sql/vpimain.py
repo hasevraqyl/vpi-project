@@ -92,7 +92,7 @@ def calc_pop():
                     )
                 )
                 jobs = res[1] + res[2] + res[3]
-                total = housing * 0.5 + jobs
+                total = housing * 5 + jobs
                 pops.append(res[0])
                 array.append(total)
         s = sum(array)
@@ -234,7 +234,8 @@ class Game(object):
             """CREATE TABLE buildings (
     planet TEXT       NOT NULL,
     building TEXT     NOT NULL,
-    turns_remains INT NOT NULL
+    turns_remains INT NOT NULL,
+    id            INT NOT NULL
         )"""
         )
         cur.execute(
@@ -298,7 +299,7 @@ class Game(object):
                     """
                     builds = list(
                         cur.execute(
-                            "select building, turns_remains from buildings where planet = ?",
+                            "select building, turns_remains, id from buildings where planet = ?",
                             (row2[1],),
                         )
                     )
@@ -365,12 +366,13 @@ class Game(object):
                     )
                     for row4 in builds:
                         cur.executemany(
-                            "DELETE from buildings where planet = ? and building = ? and turns_remains = ?",
+                            "DELETE from buildings where planet = ? and building = ? and turns_remains = ? and id = ?",
                             [
                                 (
                                     row2[1],
                                     row4[0],
                                     row4[1],
+                                    row4[2],
                                 )
                             ],
                         )
@@ -399,16 +401,9 @@ class Game(object):
                                 ],
                             )
                         cur.executemany(
-                            "INSERT INTO buildings VALUES(?, ?, ?)",
-                            [
-                                (
-                                    row2[1],
-                                    row4[0],
-                                    turns,
-                                )
-                            ],
+                            "INSERT INTO buildings VALUES(?, ?, ?, ?)",
+                            [(row2[1], row4[0], turns, row4[2])],
                         )
-                    con.commit()
                 station = list(
                     cur.execute(
                         "SELECT station, turns_remains from stations where system = ?",
@@ -608,12 +603,13 @@ class Game(object):
             if n == Buildings.buildingfetch(Buildings, oldbuilding[0]):
                 return DiscordStatusCode.redundant_elem
         cur.executemany(
-            "INSERT INTO buildings VALUES(?, ?, ?)",
+            "INSERT INTO buildings VALUES(?, ?, ?, ?)",
             [
                 (
                     pln,
                     building,
                     time,
+                    (n + 1),
                 )
             ],
         )
@@ -710,7 +706,6 @@ class Game(object):
                     info[i][4],
                     info[i][5],
                 ]
-        print(bf)
         return bf, stl, planet[0], DiscordStatusCode.all_clear
 
     @classmethod

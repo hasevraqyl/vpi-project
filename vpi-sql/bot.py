@@ -80,7 +80,7 @@ async def planet(interaction: discord.Interaction, first_value: str):
     else:
         await interaction.response.send_message(
             f"""Планета {first_value} находится в системе {system}.
-            \n Общий прирост {abs(resources[0])}; базовая продукция {resources[1]}; гражданская продукция {resources[2]}; военная продукция {resources[3]}; накопленных ресурсов {abs(resources[4])}.
+            \n Общий прирост {abs(resources[0])}; базовая продукция {resources[1]}; гражданская продукция {resources[2]}; военная продукция {resources[3]}; накопленных ресурсов {round(abs(resources[4]), 2)}.
             \n Население {round(resources[5], 2)}. Коэффициент занятости {round(resources[5]/(abs(resources[0])+resources[2]+resources[3]), 2)}."""
         )
 
@@ -140,7 +140,7 @@ async def demographics(interaction: discord.Interaction, first_value: str):
             )
         else:
             await interaction.response.send_message(
-                f"""Текущее население на планете {first_value} - {pln[5]}.
+                f"""Текущее население на планете {first_value} - {round(pln[5], 2)}.
         За последний год население изменилось на {round((1-(stl[5]/pln[5]))*100, 2)}% c {round(stl[5], 2)}.
         За последние пять лет население изменилось на {round((1-(bf[5]/pln[5]))*100, 2)}% с {round(bf[5], 2)}"""
             )
