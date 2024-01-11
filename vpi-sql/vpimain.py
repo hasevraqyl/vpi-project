@@ -452,6 +452,7 @@ class Game(object):
                     if coefpop > 1:
                         coefpop = 1
                     bp = calculate_bp(row3[1], builds)
+                    print(row2[1], row3[1], bp)
                     rsnew = row3[2] + ((row3[0] - bp) * coefpop)
                     popnew = row3[5] * 1.01
                     cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
@@ -505,7 +506,7 @@ class Game(object):
                                 row[0],
                                 row[1],
                                 row[2],
-                                newval + (row3[1] * coefpop),
+                                newval + (bp * coefpop),
                             )
                         ],
                     )
