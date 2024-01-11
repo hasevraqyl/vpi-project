@@ -304,4 +304,34 @@ async def shengen(
         await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
 
 
+@client.tree.command()
+@app_commands.describe(
+    first_value="название первой планеты", second_value="название второй планеты"
+)
+async def deport(interaction: discord.Interaction, first_value: str, second_value: str):
+    if interaction.user.id in auth_user_ids:
+        """Начинает депортацию населения с первой на вторую планеты."""
+        status = Game.deport(first_value, second_value)
+        if status.name == "no_elem":
+            await interaction.response.send_message(
+                "Проверьте правильность параметров; одной из планет не существует."
+            )
+        elif status.name == "no_table":
+            await interaction.response.send_message("Ошибка. Перезапустите игру.")
+        elif status.name == "redundant_elem":
+            await interaction.response.send_message(
+                "Перемещение масс население между этими планетами уже имеет место."
+            )
+        elif status.name == "invalid_elem":
+            await interaction.response.send_message(
+                "Планеты не входят в состав одной империи."
+            )
+        else:
+            await interaction.response.send_message(
+                f"Начата депортация населения с планеты {first_value} на планету {second_value}."
+            )
+    else:
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
+
+
 client.run("MTE5MDY1MDk3MjQ3Nzg0OTY5Mg.Gu1UAB.B9iQHcbcmbfwi3wzTC87YI6xeRD9qW9XMTPxpI")

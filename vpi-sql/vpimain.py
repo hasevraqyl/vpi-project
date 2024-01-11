@@ -74,7 +74,7 @@ def calc_pop():
             for planet in planets:
                 res = list(
                     cur.execute(
-                        "SELECT pop, RO, GP, VP from resources where planet = ?",
+                        "SELECT pop, RO, GP, VP, BP from resources where planet = ?",
                         (planet),
                     )
                 )[0]
@@ -91,7 +91,15 @@ def calc_pop():
                         )
                     )
                 )
-                jobs = res[1] + res[2] + res[3]
+                promz = len(
+                    list(
+                        cur.execute(
+                            """SELECT building from buildings WHERE building = 'Основные промзоны' AND planet = ?""",
+                            (planet),
+                        )
+                    )
+                )
+                jobs = res[1] + res[2] + res[3] + res[4] + promz * 3
                 total = housing * 5 + jobs
                 pops.append(res[0])
                 array.append(total)
@@ -126,6 +134,102 @@ def calc_pop():
                     )
                 ],
             )
+        con.commit()
+
+
+def calc_transfer():
+    li = list(cur.execute("SELECT planetfrom, planetto FROM population_transfers"))
+    for e in li:
+        sys1 = list(
+            cur.execute("SELECT polity_id from systems where planet = ?", (e[0],))
+        )
+        sys2 = list(
+            cur.execute("SELECT polity_id from systems where planet = ?", (e[1],))
+        )
+        if sys1[0] != sys2[0]:
+            cur.executemany(
+                "DELETE FROM population_transfers where planetfrom = ? AND planetto = ?",
+                [
+                    (
+                        e[0],
+                        e[1],
+                    )
+                ],
+            )
+        else:
+            pol = list(
+                cur.execute(
+                    "SELECT polity_name, polity_desc, creds from polities where polity_id = ?",
+                    sys1[0],
+                )
+            )[0]
+            cur.execute("DELETE from polities WHERE polity_id = ?", sys1[0])
+            cur.executemany(
+                "INSERT INTO polities VALUES(?, ?, ?, ?)",
+                [
+                    (
+                        sys1[0][0],
+                        pol[0],
+                        pol[1],
+                        (pol[2] - 10),
+                    )
+                ],
+            )
+        fromplanet = list(
+            cur.execute(
+                "SELECT pop, RO, BP, GP, VP, RS FROM resources WHERE planet = ?",
+                (e[0],),
+            )
+        )[0]
+        frompop = fromplanet[0]
+        transfer = 0
+        if frompop < 1.2:
+            transfer = frompop
+            frompop = 0
+            cur.execute(
+                "DELETE FROM population_transfers where planetfrom = ?", (e[0],)
+            )
+        else:
+            frompop = frompop - 1
+            transfer = 1
+        toplanet = list(
+            cur.execute(
+                "SELECT pop, RO, BP, GP, VP, RS FROM resources WHERE planet = ?",
+                (e[1],),
+            )
+        )[0]
+        topop = toplanet[0]
+        topop = topop + transfer
+        cur.execute("DELETE FROM resources where planet = ?", (e[0],))
+        cur.executemany(
+            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    e[0],
+                    fromplanet[1],
+                    fromplanet[2],
+                    fromplanet[3],
+                    fromplanet[4],
+                    fromplanet[5],
+                    frompop,
+                )
+            ],
+        )
+        cur.execute("DELETE FROM resources where planet = ?", (e[1],))
+        cur.executemany(
+            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    e[1],
+                    toplanet[1],
+                    toplanet[2],
+                    toplanet[3],
+                    toplanet[4],
+                    toplanet[5],
+                    topop,
+                )
+            ],
+        )
         con.commit()
 
 
@@ -174,6 +278,7 @@ class Game(object):
         cur.execute("DROP TABLE IF EXISTS stations")
         cur.execute("DROP TABLE IF EXISTS agreements")
         cur.execute("DROP TABLE IF EXISTS historical_planet")
+        cur.execute("DROP TABLE IF EXISTS population_transfers")
         cur.execute(
             """CREATE TABLE polities (
     polity_id INTEGER   PRIMARY KEY
@@ -269,6 +374,13 @@ class Game(object):
     turn   INT  NOT NULL
     );
         """
+        )
+        cur.execute(
+            """CREATE TABLE population_transfers(
+        planetfrom TEXT NOT NULL,
+        planetto   TEXT NOT NULL
+        )
+"""
         )
         con.commit
         return DiscordStatusCode.all_clear
@@ -426,6 +538,7 @@ class Game(object):
                             ],
                         )
         calc_pop()
+        calc_transfer()
         con.commit
 
         return DiscordStatusCode.all_clear
@@ -707,6 +820,40 @@ class Game(object):
                     info[i][5],
                 ]
         return bf, stl, planet[0], DiscordStatusCode.all_clear
+
+    @classmethod
+    def deport(cls, pln_1, pln_2):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        pl1pol = list(
+            cur.execute("SELECT polity_id from systems where planet = ?", (pln_1,))
+        )
+        pl2pol = list(
+            cur.execute("SELECT polity_id from systems where planet = ?", (pln_2,))
+        )
+        if len(pl1pol) == 0 or len(pl2pol) == 2:
+            return DiscordStatusCode.no_elem
+        if pl1pol != pl2pol:
+            return DiscordStatusCode.invalid_elem
+        for e in list(
+            cur.execute(
+                "SELECT planetto from population_transfers where planetfrom = ?",
+                (pln_1,),
+            )
+        ):
+            if e[0] == pln_2:
+                return DiscordStatusCode.redundant_elem
+        cur.executemany(
+            "INSERT INTO population_transfers VALUES(?, ?)",
+            [
+                (
+                    pln_1,
+                    pln_2,
+                )
+            ],
+        )
+        con.commit
+        return DiscordStatusCode.all_clear
 
     @classmethod
     def agree(cls, pol_1, pol_2):
