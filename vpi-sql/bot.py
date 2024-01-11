@@ -123,6 +123,33 @@ async def buildings(interaction: discord.Interaction, first_value: str):
 @app_commands.describe(
     first_value="название планеты",
 )
+async def demographics(interaction: discord.Interaction, first_value: str):
+    """Информация о населении планеты."""
+    bf, stl, pln, status = Game.planet_demos(first_value)
+    if status.name == "no_elem":
+        await interaction.response.send_message("Такой планеты нету.")
+    elif status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
+    elif status.name == "invalid_elem":
+        await interaction.response.send_message("Нет данных по населению прошлых лет.")
+    else:
+        if bf == []:
+            await interaction.response.send_message(
+                f"""Текущее население на планете {first_value} - {round(pln[5], 2)}.
+        За последний год население изменилось на {round((1-(stl[5]/pln[5])), 2)*100}% c {round(stl[5], 2)}."""
+            )
+        else:
+            await interaction.response.send_message(
+                f"""Текущее население на планете {first_value} - {pln[5]}.
+        За последний год население изменилось на {round((1-(stl[5]/pln[5]))*100, 2)}% c {round(stl[5], 2)}.
+        За последние пять лет население изменилось на {round((1-(bf[5]/pln[5]))*100, 2)}% с {round(bf[5], 2)}"""
+            )
+
+
+@client.tree.command()
+@app_commands.describe(
+    first_value="название планеты",
+)
 async def caqlculate_ql(interaction: discord.Interaction, first_value: str):
     """Информация об уровне жизни на планете."""
     builds, status = Game.calculate_ql(first_value)

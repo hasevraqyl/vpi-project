@@ -173,6 +173,7 @@ class Game(object):
         cur.execute("DROP TABLE IF EXISTS buildings")
         cur.execute("DROP TABLE IF EXISTS stations")
         cur.execute("DROP TABLE IF EXISTS agreements")
+        cur.execute("DROP TABLE IF EXISTS historical_planet")
         cur.execute(
             """CREATE TABLE polities (
     polity_id INTEGER   PRIMARY KEY
@@ -249,6 +250,25 @@ class Game(object):
     polity_2 TEXT    NOT NULL
             )"""
         )
+        cur.execute(
+            """CREATE TABLE historical_planet (
+    planet TEXT NOT NULL,
+    RO     REAL NOT NULL
+                DEFAULT (0.0),
+    BP     REAL NOT NULL
+                DEFAULT (0.0),
+    GP     REAL NOT NULL
+                DEFAULT (0.0),
+    VP     REAL NOT NULL
+                DEFAULT (0.0),
+    RS     REAL NOT NULL
+                DEFAULT (0.0),
+    pop    REAL NOT NULL
+                DEFAULT (0.0),
+    turn   INT  NOT NULL
+    );
+        """
+        )
         con.commit
         return DiscordStatusCode.all_clear
 
@@ -301,6 +321,29 @@ class Game(object):
                                 rsnew,
                                 popnew,
                             ),
+                        ],
+                    )
+                    turn = list(
+                        cur.execute(
+                            "SELECT MAX(turn) FROM historical_planet where planet = ?",
+                            (row2[1],),
+                        )
+                    )[0][0]
+                    if turn is None:
+                        turn = 1
+                    cur.executemany(
+                        "INSERT INTO historical_planet VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+                        [
+                            (
+                                row2[1],
+                                row3[0],
+                                row3[1],
+                                row3[3],
+                                row3[4],
+                                row3[2],
+                                row3[5],
+                                turn,
+                            )
                         ],
                     )
                     newval = list(
@@ -626,6 +669,49 @@ class Game(object):
         )
         con.commit
         return DiscordStatusCode.all_clear
+
+    @classmethod
+    def planet_demos(cls, pln):
+        if not check_table():
+            return None, None, None, DiscordStatusCode.no_table
+        planet = list(
+            cur.execute(
+                "SELECT RO, BP, GP, VP, RS, pop FROM resources WHERE planet = ?", (pln,)
+            )
+        )
+        if len(planet) == 0:
+            return None, None, None, DiscordStatusCode.no_elem
+        info = list(
+            cur.execute(
+                "SELECT RO, BP, GP, VP, RS, pop FROM historical_planet WHERE planet =? ORDER BY turn",
+                (pln,),
+            )
+        )
+        if len(info) == 0:
+            return None, None, None, DiscordStatusCode.invalid_elem
+        bf = []
+        stl = []
+        for i in range(len(info)):
+            if i == (len(info) - 5) and len(info) > 5:
+                bf = [
+                    info[i][0],
+                    info[i][1],
+                    info[i][2],
+                    info[i][3],
+                    info[i][4],
+                    info[i][5],
+                ]
+            if i == (len(info) - 1):
+                stl = [
+                    info[i][0],
+                    info[i][1],
+                    info[i][2],
+                    info[i][3],
+                    info[i][4],
+                    info[i][5],
+                ]
+        print(bf)
+        return bf, stl, planet[0], DiscordStatusCode.all_clear
 
     @classmethod
     def agree(cls, pol_1, pol_2):
