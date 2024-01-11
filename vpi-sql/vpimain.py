@@ -278,6 +278,7 @@ class Game(object):
         cur.execute("DROP TABLE IF EXISTS stations")
         cur.execute("DROP TABLE IF EXISTS agreements")
         cur.execute("DROP TABLE IF EXISTS historical_planet")
+        cur.execute("DROP TABLE IF EXISTS historical_polity")
         cur.execute("DROP TABLE IF EXISTS population_transfers")
         cur.execute(
             """CREATE TABLE polities (
@@ -382,6 +383,18 @@ class Game(object):
         )
 """
         )
+        cur.execute(
+            """CREATE TABLE historical_polity(
+            polity_id INTEGER
+                        NOT NULL,
+    polity_name    TEXT
+                        NOT NULL,
+    polity_desc    TEXT,
+    creds          REAL NOT NULL
+                        DEFAULT (0.0),
+    turn           INT  NOT NULL
+        )"""
+        )
         con.commit
         return DiscordStatusCode.all_clear
 
@@ -394,6 +407,26 @@ class Game(object):
                 "SELECT polity_id, polity_name, polity_desc, creds FROM polities"
             )
         ):
+            turnpol = list(
+                cur.execute(
+                    "SELECT MAX(turn) from historical_polity where polity_id = ?",
+                    (row[0],),
+                )
+            )[0][0]
+            if turnpol is None:
+                turnpol = 1
+            cur.executemany(
+                "INSERT INTO historical_polity VALUES(?, ?, ?, ?, ?)",
+                [
+                    (
+                        row[0],
+                        row[1],
+                        row[2],
+                        row[3],
+                        turnpol,
+                    )
+                ],
+            )
             for row2 in list(
                 cur.execute(
                     "SELECT system, planet FROM systems WHERE polity_id = ?", (row[0],)
@@ -820,6 +853,35 @@ class Game(object):
                     info[i][5],
                 ]
         return bf, stl, planet[0], DiscordStatusCode.all_clear
+
+    @classmethod
+    def polity_finances(cls, plt):
+        if not check_table():
+            return None, None, None, DiscordStatusCode.no_table
+        planet = list(
+            cur.execute(
+                "SELECT polity_id, polity_desc, creds FROM polities WHERE polity_name = ?",
+                (plt,),
+            )
+        )[0]
+        if len(planet) == 0:
+            return None, None, None, DiscordStatusCode.no_elem
+        info = list(
+            cur.execute(
+                "SELECT polity_id, polity_desc, creds FROM historical_polity WHERE polity_name =? ORDER BY turn",
+                (plt,),
+            )
+        )
+        if len(info) == 0:
+            return None, None, None, DiscordStatusCode.invalid_elem
+        bf = -100000.0
+        stl = -100000.0
+        for i in range(len(info)):
+            if i == (len(info) - 5) and len(info) > 5:
+                bf = info[i][2]
+            if i == (len(info) - 1):
+                stl = info[i][2]
+        return bf, stl, planet[2], DiscordStatusCode.all_clear
 
     @classmethod
     def deport(cls, pln_1, pln_2):

@@ -150,6 +150,31 @@ async def demographics(interaction: discord.Interaction, first_value: str):
 @app_commands.describe(
     first_value="название планеты",
 )
+async def finances(interaction: discord.Interaction, first_value: str):
+    """Информация о финансах империи."""
+    bf, stl, pln, status = Game.polity_finances(first_value)
+    if status.name == "no_elem":
+        await interaction.response.send_message("Такой империи нету.")
+    elif status.name == "no_table":
+        await interaction.response.send_message("Ошибка. Перезапустите игру.")
+    elif status.name == "invalid_elem":
+        await interaction.response.send_message("Нет данных по бюджету прошлых лет.")
+    else:
+        if bf == -100000.0:
+            await interaction.response.send_message(
+                f"""В настоящий момент баланс империи {first_value} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}"""
+            )
+        else:
+            await interaction.response.send_message(
+                f"""В настоящий момент баланс империи {first_value} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}
+        За последние пять лет баланс изменился на {round(pln-bf, 2)} с {round(bf, 2)}"""
+            )
+
+
+@client.tree.command()
+@app_commands.describe(
+    first_value="название планеты",
+)
 async def caqlculate_ql(interaction: discord.Interaction, first_value: str):
     """Информация об уровне жизни на планете."""
     builds, status = Game.calculate_ql(first_value)
