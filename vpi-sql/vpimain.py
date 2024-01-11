@@ -113,10 +113,10 @@ def calc_pop():
         for i in range(len(pops)):
             newpop.append(pops[i] * 0.9 + eq[i] * 0.1)
         for i in range(len(planets)):
-            res = list(
+            res2 = list(
                 cur.execute(
                     "SELECT RO, BP, GP, VP, RS, pop from resources where planet = ?",
-                    (planet),
+                    planets[i],
                 )
             )[0]
             cur.execute("DELETE from resources where planet = ?", (planets[i]))
@@ -125,11 +125,11 @@ def calc_pop():
                 [
                     (
                         planets[i][0],
-                        res[0],
-                        res[1],
-                        res[2],
-                        res[3],
-                        res[4],
+                        res2[0],
+                        res2[1],
+                        res2[2],
+                        res2[3],
+                        res2[4],
                         newpop[i],
                     )
                 ],
@@ -234,9 +234,9 @@ def calc_transfer():
 
 
 class Game(object):
-    @classmethod
+    """@classmethod
     def debug_pop(cls):
-        calc_pop()
+        calc_pop()"""
 
     @classmethod
     def calculate_ql(cls, pln):

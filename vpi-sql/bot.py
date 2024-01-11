@@ -47,11 +47,10 @@ async def turn(interaction: discord.Interaction):
         await interaction.response.send_message("Ход сделан.")
 
 
-@client.tree.command()
+"""@client.tree.command()
 async def смерть(interaction: discord.Interaction):
-    """НЕ ТРОГАЙТЕ"""
     Game.debug_pop()
-    await interaction.response.send_message("Тучи сгущаются.")
+    await interaction.response.send_message("Тучи сгущаются.")"""
 
 
 @client.tree.command()
