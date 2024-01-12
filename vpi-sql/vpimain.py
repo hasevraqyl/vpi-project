@@ -134,7 +134,7 @@ def calc_pop():
                     )
                 ],
             )
-        con.commit()
+    con.commit()
 
 
 def calc_transfer():
@@ -230,7 +230,7 @@ def calc_transfer():
                 )
             ],
         )
-        con.commit()
+    con.commit()
 
 
 class Game(object):
@@ -280,6 +280,8 @@ class Game(object):
         cur.execute("DROP TABLE IF EXISTS historical_planet")
         cur.execute("DROP TABLE IF EXISTS historical_polity")
         cur.execute("DROP TABLE IF EXISTS population_transfers")
+        cur.execute("DROP TABLE IF EXISTS unclaimed_systems")
+        cur.execute("DROP TABLE IF EXISTS unclaimed_planets")
         cur.execute(
             """CREATE TABLE polities (
     polity_id INTEGER   PRIMARY KEY
@@ -395,6 +397,28 @@ class Game(object):
     turn           INT  NOT NULL
         )"""
         )
+        cur.execute(
+            """CREATE TABLE unclaimed_systems(
+                    system TEXT   NOT NULL,
+                    planet TEXT   UNIQUE
+                                  NOT NULL
+        )"""
+        )
+        cur.execute(
+            """CREATE TABLE unclaimed_planets(
+            planet TEXT PRIMARY KEY
+                        UNIQUE
+                        NOT NULL,
+            RO     REAL NOT NULL
+                DEFAULT (0.0),
+            BP     REAL NOT NULL
+                DEFAULT (0.0),
+            GP     REAL NOT NULL
+                DEFAULT (0.0),
+            VP     REAL NOT NULL
+                DEFAULT (0.0)
+        )"""
+        )
         con.commit
         return DiscordStatusCode.all_clear
 
@@ -452,7 +476,6 @@ class Game(object):
                     if coefpop > 1:
                         coefpop = 1
                     bp = calculate_bp(row3[1], builds)
-                    print(row2[1], row3[1], bp)
                     rsnew = row3[2] + ((row3[0] - bp) * coefpop)
                     popnew = row3[5] * 1.01
                     cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
@@ -727,6 +750,86 @@ class Game(object):
             )
         con.commit()
         return plname[0][0], DiscordStatusCode.all_clear
+
+    @classmethod
+    def create_planet(cls, sys, pln):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        if (
+            len(
+                list(cur.execute("SELECT planet from systems where planet = ?", (pln,)))
+            )
+            != 0
+        ):
+            return DiscordStatusCode.redundant_elem
+        if (
+            len(
+                list(cur.execute("SELECT system from systems where system = ?", (sys,)))
+            )
+            != 0
+        ):
+            return DiscordStatusCode.redundant_elem
+        cur.executemany(
+            "INSERT INTO unclaimed_systems VALUES(?, ?)",
+            [
+                (
+                    sys,
+                    pln,
+                )
+            ],
+        )
+        cur.executemany(
+            "INSERT INTO unclaimed_planets VALUES(?, ?, ?, ?, ?)",
+            [(pln, 0.0, 0.0, 0.0, 0.0)],
+        )
+        con.commit()
+        return DiscordStatusCode.all_clear
+
+    @classmethod
+    def claim_system(cls, plt, sys):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        plt_id = list(
+            cur.execute("SELECT polity_id from polities where polity_name = ?", (plt,))
+        )
+        if len(plt_id) == 0:
+            return DiscordStatusCode.no_elem
+        else:
+            polid = plt_id[0][0]
+        planets = list(
+            cur.execute("SELECT planet from unclaimed_systems WHERE system = ?", (sys,))
+        )
+        if len(planets) == 0:
+            return DiscordStatusCode.no_elem
+        for planet in planets:
+            cur.executemany(
+                "INSERT INTO systems VALUES(?, ?, ?)",
+                [
+                    (
+                        polid,
+                        sys,
+                        planet[0],
+                    )
+                ],
+            )
+            cur.executemany(
+                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        planet[0],
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                    )
+                ],
+            )
+            cur.execute("DELETE FROM unclaimed_planets WHERE planet = ?", planet)
+        cur.execute("DELETE from unclaimed_systems WHERE system = ?", (sys,))
+        con.commit
+        return DiscordStatusCode.all_clear
 
     @classmethod
     def build_Building(cls, pln, building):

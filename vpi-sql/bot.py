@@ -2,27 +2,16 @@ import discord
 from discord import app_commands
 from vpimain import Game
 
-MY_GUILD = discord.Object(id=1157327909992804456)  # replace with your guild id
+MY_GUILD = discord.Object(id=1157327909992804456)
 auth_user_ids = [642112940295847984, 1162034396019314799]
 
 
 class MyClient(discord.Client):
     def __init__(self, *, intents: discord.Intents):
         super().__init__(intents=intents)
-        # A CommandTree is a special type that holds all the application command
-        # state required to make it work. This is a separate class because it
-        # allows all the extra state to be opt-in.
-        # Whenever you want to work with application commands, your tree is used
-        # to store and work with them.
-        # Note: When using commands.Bot instead of discord.Client, the bot will
-        # maintain its own tree instead.
         self.tree = app_commands.CommandTree(self)
 
-    # In this basic example, we just synchronize the app commands to one guild.
-    # Instead of specifying a guild to every command, we copy over our global commands instead.
-    # By doing so, we don't have to wait up to an hour until they are shown to the end-user.
     async def setup_hook(self):
-        # This copies the global commands over to your guild.
         self.tree.copy_global_to(guild=MY_GUILD)
         await self.tree.sync(guild=MY_GUILD)
 
@@ -141,7 +130,7 @@ async def demographics(interaction: discord.Interaction, first_value: str):
             await interaction.response.send_message(
                 f"""Текущее население на планете {first_value} - {round(pln[5], 2)}.
         За последний год население изменилось на {round((1-(stl[5]/pln[5]))*100, 2)}% c {round(stl[5], 2)}.
-        За последние пять лет население изменилось на {round((1-(bf[5]/pln[5]))*100, 2)}% с {round(bf[5], 2)}"""
+        За последние пять лет население изменилось на {round((1-(bf[5]/pln[5]))*100, 2)}% с {round(bf[5], 2)}."""
             )
 
 
@@ -161,12 +150,12 @@ async def finances(interaction: discord.Interaction, first_value: str):
     else:
         if bf == -100000.0:
             await interaction.response.send_message(
-                f"""В настоящий момент баланс империи {first_value} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}"""
+                f"""В настоящий момент баланс империи {first_value} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}."""
             )
         else:
             await interaction.response.send_message(
-                f"""В настоящий момент баланс империи {first_value} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}
-        За последние пять лет баланс изменился на {round(pln-bf, 2)} с {round(bf, 2)}"""
+                f"""В настоящий момент баланс империи {first_value} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}.
+        За последние пять лет баланс изменился на {round(pln-bf, 2)} с {round(bf, 2)}."""
             )
 
 
@@ -222,7 +211,49 @@ async def planet_add_bp(
             await interaction.response.send_message("Ошибка. Перезапустите игру.")
         else:
             await interaction.response.send_message(
-                f"Базовая продукция увеличена на {second_value} на планете {first_value}"
+                f"Базовая продукция увеличена на {second_value} на планете {first_value}."
+            )
+    else:
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
+
+
+@client.tree.command()
+@app_commands.describe(first_value="название системы", second_value="название планеты")
+async def create_planet(
+    interaction: discord.Interaction, first_value: str, second_value: str
+):
+    if interaction.user.id in auth_user_ids:
+        """Создаем планету."""
+        status = Game.create_planet(first_value, second_value)
+        if status.name == "redundant_elem":
+            await interaction.response.send_message(
+                "Такая планета или система уже существует в составе какой-то империи."
+            )
+        elif status.name == "no_table":
+            await interaction.response.send_message("Ошибка. Перезапустите игру.")
+        else:
+            await interaction.response.send_message(
+                f"Создана планета {second_value} в составе системы {first_value}."
+            )
+    else:
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
+
+
+@client.tree.command()
+@app_commands.describe(first_value="название политии", second_value="название системы")
+async def claim_system(
+    interaction: discord.Interaction, first_value: str, second_value: str
+):
+    if interaction.user.id in auth_user_ids:
+        """Передаем систему политии."""
+        status = Game.claim_system(first_value, second_value)
+        if status.name == "no_elem":
+            await interaction.response.send_message("Такой системы или политии нет.")
+        elif status.name == "no_table":
+            await interaction.response.send_message("Ошибка. Перезапустите игру.")
+        else:
+            await interaction.response.send_message(
+                f"Система {second_value} передана политии {first_value} вместе с планетами."
             )
     else:
         await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
