@@ -2,6 +2,9 @@ import sqlite3
 from enum_implement import DiscordStatusCode
 from techs import Buildings
 import numpy as np
+import random
+
+random.seed()
 
 con = sqlite3.connect("vpi.db")
 cur = con.cursor()
@@ -812,12 +815,13 @@ class Game(object):
                     )
                 ],
             )
+            ro = random.randint(4, 15)
             cur.executemany(
                 "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         planet[0],
-                        0.0,
+                        ro,
                         0.0,
                         0.0,
                         0.0,
