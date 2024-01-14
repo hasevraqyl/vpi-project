@@ -1,9 +1,13 @@
 import discord
+import tomllib
 from discord import app_commands
 from vpimain import Game
 
-MY_GUILD = discord.Object(id=1157327909992804456)
-auth_user_ids = [642112940295847984, 1162034396019314799]
+with open("config.toml", mode="rb") as fp:
+    info = tomllib.load(fp)
+
+MY_GUILD = discord.Object(id=info.get("guild"))
+auth_user_ids = info.get("auth_users")
 
 
 class MyClient(discord.Client):
@@ -389,4 +393,4 @@ async def deport(interaction: discord.Interaction, first_value: str, second_valu
         await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
 
 
-client.run("MTE5MDY1MDk3MjQ3Nzg0OTY5Mg.Gu1UAB.B9iQHcbcmbfwi3wzTC87YI6xeRD9qW9XMTPxpI")
+client.run(info.get("token"))
