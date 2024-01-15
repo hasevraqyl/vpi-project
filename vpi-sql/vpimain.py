@@ -47,6 +47,22 @@ def calculate_bp(bp_total, builds):
     return bp_total
 
 
+def calculate_housing(builds):
+    total_housing = 0
+    housing = ["Кварталы I", "Кварталы II", "Кварталы III", "Трущобы"]
+    for b in builds:
+        if b[0] in housing and b[1] == 0:
+            total_housing = total_housing + 1.0
+    return total_housing
+
+
+"""temporary function"""
+
+
+def calculate_employment(builds):
+    return 1.0
+
+
 def calc_pop():
     li = list(cur.execute("SELECT polity_1, polity_2 from agreements"))
     agrl = []
@@ -475,11 +491,14 @@ class Game(object):
                             (row2[1],),
                         )
                     )
-                    coefpop = row3[5] / (abs(row3[0]) + row3[3] + row3[4])
+                    """coefpop will later be calculated through other means"""
+                    coefpop = row3[5] / calculate_employment(builds)
                     if coefpop > 1:
                         coefpop = 1
+                    coefhouse = calculate_housing(builds) / row3[5]
+                    coeftotal = (coefpop * 0, 3 + coefhouse * 0, 7)
                     bp = calculate_bp(row3[1], builds)
-                    rsnew = row3[2] + ((row3[0] - bp) * coefpop)
+                    rsnew = row3[2] + ((row3[0] - bp) * coeftotal)
                     popnew = row3[5] * 1.01
                     cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
                     cur.executemany(
@@ -881,7 +900,6 @@ class Game(object):
         )
         if len(buildingslist) == 0:
             return None, DiscordStatusCode.no_elem
-        string = ""
         for building in buildingslist:
             if building[1] != 0:
                 string += (
@@ -889,7 +907,7 @@ class Game(object):
                 )
             else:
                 string += f"\n {building[0]}"
-        return string, DiscordStatusCode.all_clear
+        return buildingslist, DiscordStatusCode.all_clear
 
     @classmethod
     def build_Station(cls, sys):

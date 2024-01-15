@@ -106,8 +106,16 @@ async def buildings(interaction: discord.Interaction, first_value: str):
     elif status.name == "no_table":
         await interaction.response.send_message("Ошибка. Перезапустите игру.")
     else:
+        string = ""
+        for building in builds:
+            if building[1] != 0:
+                string += (
+                    f"\n {building[0]}. До окончания постройки {building[1]} ходов."
+                )
+            else:
+                string += f"\n {building[0]}"
         await interaction.response.send_message(
-            f"На планете {first_value} находятся следующие постройки: {builds}"
+            f"На планете {first_value} находятся следующие постройки: {string}"
         )
 
 
