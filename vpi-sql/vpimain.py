@@ -67,13 +67,16 @@ def calc_pop():
     li = list(cur.execute("SELECT polity_1, polity_2 from agreements"))
     agrl = []
     for e in li:
-        for zone in agrl:
-            if e[0] in zone and e[1] not in zone:
-                zone.append(e[1])
-            elif e[0] not in zone and e[1] not in zone:
-                agrl.append([e[0], e[1]])
-    lipol = list(cur.execute("SELECT polity_id from polities"))
-    for e in lipol:
+        if len(agrl) > 0:
+            for zone in agrl:
+                if e[0] in zone and e[1] not in zone:
+                    zone.append(e[1])
+                elif e[0] not in zone and e[1] not in zone:
+                    agrl.append([e[0], e[1]])
+        else:
+            agrl.append([e[0], e[1]])
+    plt_list = list(cur.execute("SELECT polity_id from polities"))
+    for e in plt_list:
         f = False
         for zone in agrl:
             if e[0] in zone:
@@ -120,9 +123,7 @@ def calc_pop():
         s = sum(array)
         for i in range(len(array)):
             array[i] = array[i] / s
-        ea = np.array(array)
-        ep = np.array(sum(pops))
-        eq = np.multiply(ea, ep)
+        eq = np.multiply(np.array(array), np.array(sum(pops)))
         newpop = []
         for i in range(len(pops)):
             newpop.append(pops[i] * 0.9 + eq[i] * 0.1)
@@ -250,11 +251,10 @@ def calc_transfer():
 class Game(object):
     """@classmethod
     def debug_pop(cls):
-        calc_pop()"""
-
-    @classmethod
-    def calculate_ql(cls, pln):
-        """currently deprecated, will be rewritten"""
+        calc_pop()
+     @classmethod
+     def calculate_ql(cls, pln):
+        "currently deprecated, will be rewritten"
         if not check_table():
             return None, DiscordStatusCode.no_table
         buildings = list(
@@ -281,7 +281,7 @@ class Game(object):
             0
         ][0]
         ql = 50 * qu_n / (res)
-        return ql, DiscordStatusCode.all_clear
+        return ql, DiscordStatusCode.all_clear"""
 
     @classmethod
     def rollback(cls):
@@ -622,25 +622,29 @@ class Game(object):
     def fetch_Planet(cls, pln):
         if not check_table():
             return None, None, DiscordStatusCode.no_table
-        plsys = list(cur.execute("SELECT system FROM systems where planet = ?", (pln,)))
-        if len(plsys) == 0:
+        pl_sys = list(
+            cur.execute("SELECT system FROM systems where planet = ?", (pln,))
+        )
+        if len(pl_sys) == 0:
             return None, None, DiscordStatusCode.no_elem
-        planetsystem = plsys[0][0]
-        planetresources = list(
+        planet_system = pl_sys[0][0]
+        planet_resources = list(
             cur.execute(
                 "SELECT RO, BP, GP, VP, RS, pop FROM resources where planet = ?", (pln,)
             )
         )[0]
-        return planetsystem, planetresources, DiscordStatusCode.all_clear
+        return planet_system, planet_resources, DiscordStatusCode.all_clear
 
     @classmethod
     def fetch_System(cls, sys):
         if not check_table():
             return None, None, None, DiscordStatusCode.no_table
-        plsys = list(cur.execute("SELECT system FROM systems where system = ?", (sys,)))
-        if len(plsys) == 0:
+        pl_sys = list(
+            cur.execute("SELECT system FROM systems where system = ?", (sys,))
+        )
+        if len(pl_sys) == 0:
             return None, None, None, DiscordStatusCode.no_elem
-        planetlist = list(
+        planet_list = list(
             cur.execute("SELECT planet FROM systems where system = ?", (sys,))
         )
         sst = ""
@@ -653,7 +657,7 @@ class Game(object):
             sst = f"В системе есть строящаяся станция, до завершения {sl[0][1]} ходов."
         elif len(sl) > 0 and sl[0][1] == 0:
             sst = "В системе есть станция."
-        planetstring = comma_stringer(planetlist)
+        planet_string = comma_stringer(planet_list)
         polity = list(
             cur.execute(
                 "SELECT polity_name FROM polities where polity_id = ?",
@@ -666,27 +670,27 @@ class Game(object):
                 ),
             )
         )[0][0]
-        return polity, planetstring, sst, DiscordStatusCode.all_clear
+        return polity, planet_string, sst, DiscordStatusCode.all_clear
 
     @classmethod
     def fetch_Polity(cls, pol):
         if not check_table():
             return None, None, DiscordStatusCode.no_table
-        plsys = list(
+        pl_sys = list(
             cur.execute("SELECT polity_id FROM polities where polity_name = ?", (pol,))
         )
-        if len(plsys) == 0:
+        if len(pl_sys) == 0:
             return None, None, DiscordStatusCode.no_elem
-        systemlist = list(
+        system_list = list(
             cur.execute(
-                "SELECT DISTINCT system from systems where polity_id = ?", (plsys[0])
+                "SELECT DISTINCT system from systems where polity_id = ?", (pl_sys[0])
             )
         )
-        systemstring = comma_stringer(systemlist)
+        system_string = comma_stringer(system_list)
         creds = list(
-            cur.execute("SELECT creds FROM polities where polity_id = ?", (plsys[0]))
+            cur.execute("SELECT creds FROM polities where polity_id = ?", (pl_sys[0]))
         )[0][0]
-        return creds, systemstring, DiscordStatusCode.all_clear
+        return creds, system_string, DiscordStatusCode.all_clear
 
     @classmethod
     def add_BP(cls, pln, rsrs):
@@ -699,7 +703,7 @@ class Game(object):
             == 0
         ):
             return DiscordStatusCode.no_elem
-        planetresources = list(
+        planet_resources = list(
             cur.execute(
                 "SELECT RO, BP, RS, GP, VP, pop FROM resources where planet = ?", (pln,)
             )
@@ -710,12 +714,12 @@ class Game(object):
             [
                 (
                     pln,
-                    planetresources[0][0],
+                    planet_resources[0][0],
                     rsrs,
-                    planetresources[0][3],
-                    planetresources[0][4],
-                    planetresources[0][2],
-                    planetresources[0][6],
+                    planet_resources[0][3],
+                    planet_resources[0][4],
+                    planet_resources[0][2],
+                    planet_resources[0][6],
                 )
             ],
         )
@@ -726,48 +730,48 @@ class Game(object):
     def transfer_System(cls, sys, pol):
         if not check_table():
             return None, DiscordStatusCode.no_table
-        plsys = list(
+        pl_sys = list(
             cur.execute("SELECT polity_id FROM systems where system = ?", (sys,))
         )
-        plname = list(
+        pl_name = list(
             cur.execute(
-                "SELECT polity_name FROM polities where polity_id = ?", plsys[0]
+                "SELECT polity_name FROM polities where polity_id = ?", pl_sys[0]
             )
         )
-        if len(plsys) == 0:
+        if len(pl_sys) == 0:
             return None, DiscordStatusCode.no_elem
-        plpol = list(
+        pl_pol = list(
             cur.execute("SELECT polity_id FROM polities where polity_name = ?", (pol,))
         )
-        if len(plpol) == 0:
+        if len(pl_pol) == 0:
             return None, None, DiscordStatusCode.no_elem
-        if plsys == plpol:
+        if pl_sys == pl_pol:
             return None, None, DiscordStatusCode.invalid_elem
-        systemlist = list(
+        system_list = list(
             cur.execute("SELECT planet FROM systems where system = ?", (sys,))
         )
         cur.executemany(
             "DELETE from systems where polity_id = ? AND system = ?",
             [
                 (
-                    plsys[0][0],
+                    pl_sys[0][0],
                     sys,
                 )
             ],
         )
-        for system in systemlist:
+        for system in system_list:
             cur.executemany(
                 "INSERT INTO systems VALUES(?, ?, ?)",
                 [
                     (
-                        plpol[0][0],
+                        pl_pol[0][0],
                         sys,
                         system[0],
                     )
                 ],
             )
         con.commit()
-        return plname[0][0], DiscordStatusCode.all_clear
+        return pl_name[0][0], DiscordStatusCode.all_clear
 
     @classmethod
     def create_planet(cls, sys, pln):
@@ -862,14 +866,14 @@ class Game(object):
         )
         if len(planet) == 0:
             return DiscordStatusCode.no_elem
-        oldbuildings = list(
+        old_buildings = list(
             cur.execute("SELECT building from buildings where planet = ?", (pln,))
         )
         n = 0
-        for oldbuilding in oldbuildings:
-            if oldbuilding[0] == building:
+        for old_building in old_buildings:
+            if old_building[0] == building:
                 n += 1
-            if n == Buildings.buildingfetch(Buildings, oldbuilding[0]):
+            if n == Buildings.buildingfetch(Buildings, old_building[0]):
                 return DiscordStatusCode.redundant_elem
         cur.executemany(
             "INSERT INTO buildings VALUES(?, ?, ?, ?)",
@@ -889,14 +893,14 @@ class Game(object):
     def planet_Buildings(cls, pln):
         if not check_table():
             return None, DiscordStatusCode.no_table
-        buildingslist = list(
+        buildings_list = list(
             cur.execute(
                 "SELECT building, turns_remains from buildings where planet = ?", (pln,)
             )
         )
-        if len(buildingslist) == 0:
+        if len(buildings_list) == 0:
             return None, DiscordStatusCode.no_elem
-        return buildingslist, DiscordStatusCode.all_clear
+        return buildings_list, DiscordStatusCode.all_clear
 
     @classmethod
     def build_Station(cls, sys):
@@ -1002,15 +1006,15 @@ class Game(object):
     def deport(cls, pln_1, pln_2):
         if not check_table():
             return DiscordStatusCode.no_table
-        pl1pol = list(
+        pln1_pol = list(
             cur.execute("SELECT polity_id from systems where planet = ?", (pln_1,))
         )
-        pl2pol = list(
+        pln2_pol = list(
             cur.execute("SELECT polity_id from systems where planet = ?", (pln_2,))
         )
-        if len(pl1pol) == 0 or len(pl2pol) == 2:
+        if len(pln1_pol) == 0 or len(pln2_pol) == 2:
             return DiscordStatusCode.no_elem
-        if pl1pol != pl2pol:
+        if pln1_pol != pln2_pol:
             return DiscordStatusCode.invalid_elem
         for e in list(
             cur.execute(
