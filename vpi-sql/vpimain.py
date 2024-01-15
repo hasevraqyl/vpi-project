@@ -97,17 +97,10 @@ def calc_pop():
                         (planet),
                     )
                 )[0]
-                housing = len(
-                    list(
-                        cur.execute(
-                            """SELECT building from buildings WHERE building = ('Кварталы I'
-                                                    OR building = 'Кварталы II'
-                                                    OR building = 'Кварталы III'
-                                                    OR building = 'Кварталы III'
-                                                    OR building = 'Трущобы')
-                                                    AND planet = ?""",
-                            (planet),
-                        )
+                builds = list(
+                    cur.execute(
+                        """SELECT building, turns_remains, id from buildings WHERE planet = ?""",
+                        (planet),
                     )
                 )
                 promz = len(
@@ -119,7 +112,9 @@ def calc_pop():
                     )
                 )
                 jobs = res[1] + res[2] + res[3] + res[4] + promz * 3
-                total = housing * 5 + jobs
+                total = (
+                    calculate_housing(builds) * 5 + jobs + calculate_employment(builds)
+                )
                 pops.append(res[0])
                 array.append(total)
         s = sum(array)
@@ -259,6 +254,7 @@ class Game(object):
 
     @classmethod
     def calculate_ql(cls, pln):
+        """currently deprecated, will be rewritten"""
         if not check_table():
             return None, DiscordStatusCode.no_table
         buildings = list(
