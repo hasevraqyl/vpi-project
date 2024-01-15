@@ -900,13 +900,6 @@ class Game(object):
         )
         if len(buildingslist) == 0:
             return None, DiscordStatusCode.no_elem
-        for building in buildingslist:
-            if building[1] != 0:
-                string += (
-                    f"\n {building[0]}. До окончания постройки {building[1]} ходов."
-                )
-            else:
-                string += f"\n {building[0]}"
         return buildingslist, DiscordStatusCode.all_clear
 
     @classmethod
