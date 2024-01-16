@@ -1,6 +1,7 @@
 import sqlite3
 from enum_implement import DiscordStatusCode
 from techs import Buildings
+from techs import Techs
 import numpy as np
 import random
 import tomllib
@@ -186,19 +187,20 @@ def calc_transfer():
         else:
             pol = list(
                 cur.execute(
-                    "SELECT polity_name, polity_desc, creds from polities where polity_id = ?",
+                    "SELECT polity_name, polity_desc, creds, science from polities where polity_id = ?",
                     sys1[0],
                 )
             )[0]
             cur.execute("DELETE from polities WHERE polity_id = ?", sys1[0])
             cur.executemany(
-                "INSERT INTO polities VALUES(?, ?, ?, ?)",
+                "INSERT INTO polities VALUES(?, ?, ?, ?, ?)",
                 [
                     (
                         sys1[0][0],
                         pol[0],
                         pol[1],
                         (pol[2] - 10),
+                        pol[4],
                     )
                 ],
             )
@@ -303,10 +305,10 @@ class Game(object):
         cur.executescript(info.get("rollback"))
         cur.executescript(info.get("migration_prime"))
         polities = [
-            (1, "pogglia", "no sex", 0.0),
-            (2, "ubia", "sex", 0.0),
+            (1, "pogglia", "no sex", 0.0, 0.0),
+            (2, "ubia", "sex", 0.0, 0.0),
         ]
-        cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?)", polities)
+        cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?, ?)", polities)
         resources = [
             ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 10.0, 1),
             ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0, 1),
@@ -333,7 +335,7 @@ class Game(object):
             return DiscordStatusCode.no_table
         for row in list(
             cur.execute(
-                "SELECT polity_id, polity_name, polity_desc, creds FROM polities"
+                "SELECT polity_id, polity_name, polity_desc, creds, science FROM polities"
             )
         ):
             turnpol = list(
@@ -439,6 +441,7 @@ class Game(object):
                                 row[1],
                                 row[2],
                                 newval + (bp * coefpop),
+                                row[4],
                             )
                         ],
                     )
@@ -475,6 +478,7 @@ class Game(object):
                                         row[2],
                                         newval2
                                         - Buildings.costfetch(Buildings, row4[0]),
+                                        row[4],
                                     )
                                 ],
                             )
@@ -934,6 +938,71 @@ class Game(object):
         )
         con.commit
         return DiscordStatusCode.all_clear
+
+    @classmethod
+    def research_tech(cls, pol, tech):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        polity = list(
+            cur.execute(
+                "SELECT polity_id, polity_desc, creds, science from polities where polity_name = ?",
+                (pol,),
+            )
+        )
+        if len(polity) == 0:
+            return None, DiscordStatusCode.no_elem
+        cat_tech, cost_tech, num_tech = Techs.fetch_tech(tech)
+        if cat_tech is None:
+            return None, DiscordStatusCode.invalid_elem
+        techs = list(
+            cur.execute(
+                "SELECT tech_name, cost_left, currently_researched from techs where polity_id = ?",
+                polity[0],
+            )
+        )
+        tech_flag = False
+        if num_tech == 1:
+            tech_flag = True
+        currently_researched = ""
+        for tech in techs:
+            if tech[0] == tech and (tech[2] == 1 or tech[1] == 0.0):
+                return None, DiscordStatusCode.redundant_elem
+            cat_oldtech, _, num_oldtech = Techs.fetch_tech(tech[0])
+            if cat_oldtech == cat_tech and num_oldtech == num_tech - 1:
+                tech_flag = True
+            if tech[2] == 1:
+                currently_researched = tech[0]
+                cur.execute(
+                    "DELETE FROM techs WHERE tech_name = ? and polity_id = ?",
+                    (tech[0], polity[0][0]),
+                )
+                cur.executemany(
+                    "INSERT INTO techs VALUES(?, ?, ?, ?)",
+                    [
+                        (
+                            polity[0][0],
+                            tech[0],
+                            tech[1],
+                            0,
+                        )
+                    ],
+                )
+            if tech_flag:
+                cur.execute(
+                    "DELETE FROM techs where tech_name = ? and polity_id = ?",
+                    (tech, polity[0][0]),
+                )
+                cur.executemany(
+                    "INSERT INTO techs VALUES(?, ?, ?, ?)"[
+                        (
+                            polity[0][0],
+                            tech,
+                            cost_tech,
+                            num_tech,
+                        )
+                    ]
+                )
+                return currently_researched, DiscordStatusCode.all_clear
 
     @classmethod
     def agree(cls, pol_1, pol_2):

@@ -1,8 +1,40 @@
 class Techs(object):
-    class Tech(object):
-        def __init__(self, name, number):
+    class T(object):
+        def __init__(self, name, category, cost, number):
             self.name = name
+            self.category = category
+            self.cost = cost
             self.number = number
+
+    _techslist = {
+        T("Теория гиперсферы", "phys", 100.0, 1),
+        T("Варп-двигатель", "phys", 100.0, 2),
+        T("Квантовый уловитель", "phys", 200.0, 3),
+        T("Силовое поле", "phys", 200.0, 4),
+        T("Высокочастотные лазеры", "phys", 300.0, 5),
+        T("Ловушка гравиволн", "phys", 400.0, 5),
+        T("Плазменная физика", "phys", 500.0, 6),
+        T("Квантовый радар", "phys", 600.0, 7),
+        T("Гравитационный накопитель", "phys", 600.0, 8),
+        T("Наниты", "phys", 700.0, 9),
+        T("Сверхчастотные лазеры", "phys", 700.0, 10),
+        T("Дезинтегратор", "phys", 800.0, 11),
+        T("Физика античастиц", "phys", 900.0, 12),
+        T("Монопольные бомбы", "phys", 1000.0, 13),
+        T("Квантовый стабилизатор", "phys", 1000.0, 14),
+        T("Квантовая телепортация", "phys", 1100.0, 15),
+        T("Законы робототехники", "cyb", 100.0, 1),
+        T("Квантовая информатика", "cyb", 300.0, 2),
+        T("Армия роботов", "cyb", 400.0, 3),
+        T("Цифровой гулаг", "cyb", 500.0, 4),
+        T("Перенос сознания", "cyb", 1000.0, 5),
+        T("Сингулярность", "cyb", 1100.0, 6),
+    }
+
+    def fetch_tech(cls, name):
+        for t in cls._techslist:
+            if t.name == name:
+                return t.category, t.cost, t.number
 
 
 class Buildings(object):

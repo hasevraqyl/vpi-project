@@ -7,7 +7,9 @@ migration_prime = """
                 NOT NULL,
     polity_desc TEXT,
     creds       REAL NOT NULL
-                DEFAULT (0.0) 
+                DEFAULT (0.0),
+    science     REAL NOT NULL
+                DEGAULT (0.0)
     );
     CREATE TABLE resources (
     planet TEXT PRIMARY KEY
@@ -97,6 +99,12 @@ migration_prime = """
             VP     REAL NOT NULL
                 DEFAULT (0.0)
     );
+    CREATE TABLE techs(
+        polity_id INT NOT NULL,
+        tech_name TEXT NOT NULL, 
+        cost_left REAL NOT NULL,
+        currently_researched INT NOT NULL
+    );
     """
 rollback = """
     DROP TABLE IF EXISTS polities;
@@ -110,4 +118,5 @@ rollback = """
     DROP TABLE IF EXISTS population_transfers;
     DROP TABLE IF EXISTS unclaimed_systems;
     DROP TABLE IF EXISTS unclaimed_planets;
+    DROP TABLE IF EXISTS techs;
 """
