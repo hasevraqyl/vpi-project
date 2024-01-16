@@ -1,0 +1,113 @@
+migration_prime = """
+    CREATE TABLE polities (
+    polity_id INTEGER PRIMARY KEY
+                UNIQUE
+                NOT NULL,
+    polity_name TEXT UNIQUE
+                NOT NULL,
+    polity_desc TEXT,
+    creds       REAL NOT NULL
+                DEFAULT (0.0) 
+    );
+    CREATE TABLE resources (
+    planet TEXT PRIMARY KEY
+                UNIQUE
+                NOT NULL,
+    RO     REAL NOT NULL
+                DEFAULT (0.0),
+    BP     REAL NOT NULL
+                DEFAULT (0.0),
+    GP     REAL NOT NULL
+                DEFAULT (0.0),
+    VP     REAL NOT NULL
+                DEFAULT (0.0),
+    RS     REAL NOT NULL
+                DEFAULT (0.0),
+    pop    REAL NOT NULL
+                DEFAULT (0.0),
+    hosp   INT  NOT NULL
+                DEFAULT (1)
+    );
+    CREATE TABLE systems (
+    polity_id INTEGER NOT NULL,
+    system    TEXT    NOT NULL,
+    planet    TEXT    UNIQUE
+                      NOT NULL
+    );
+    CREATE TABLE buildings (
+    planet TEXT       NOT NULL,
+    building TEXT     NOT NULL,
+    turns_remains INT NOT NULL,
+    id            INT NOT NULL
+    );
+    CREATE TABLE stations (
+    system TEXT       NOT NULL,
+    station TEXT     NOT NULL,
+    turns_remains INT  NOT NULL
+    );
+    CREATE TABLE agreements (
+    polity_1 TEXT    NOT NULL,
+    polity_2 TEXT    NOT NULL
+    );
+    CREATE TABLE historical_planet (
+    planet TEXT NOT NULL,
+    RO     REAL NOT NULL
+                DEFAULT (0.0),
+    BP     REAL NOT NULL
+                DEFAULT (0.0),
+    GP     REAL NOT NULL
+                DEFAULT (0.0),
+    VP     REAL NOT NULL
+                DEFAULT (0.0),
+    RS     REAL NOT NULL
+                DEFAULT (0.0),
+    pop    REAL NOT NULL
+                DEFAULT (0.0),
+    turn   INT  NOT NULL
+    );
+    CREATE TABLE population_transfers(
+        planetfrom TEXT NOT NULL,
+        planetto   TEXT NOT NULL
+    );
+    CREATE TABLE historical_polity(
+            polity_id INTEGER
+                        NOT NULL,
+    polity_name    TEXT
+                        NOT NULL,
+    polity_desc    TEXT,
+    creds          REAL NOT NULL
+                        DEFAULT (0.0),
+    turn           INT  NOT NULL
+    );
+    CREATE TABLE unclaimed_systems(
+                    system TEXT   NOT NULL,
+                    planet TEXT   UNIQUE
+                                  NOT NULL
+    );
+    CREATE TABLE unclaimed_planets(
+            planet TEXT PRIMARY KEY
+                        UNIQUE
+                        NOT NULL,
+            RO     REAL NOT NULL
+                DEFAULT (0.0),
+            BP     REAL NOT NULL
+                DEFAULT (0.0),
+            GP     REAL NOT NULL
+                DEFAULT (0.0),
+            VP     REAL NOT NULL
+                DEFAULT (0.0)
+    );
+    """
+rollback = """
+    DROP TABLE IF EXISTS polities;
+    DROP TABLE IF EXISTS systems;
+    DROP TABLE IF EXISTS resources;
+    DROP TABLE IF EXISTS buildings;
+    DROP TABLE IF EXISTS stations;
+    DROP TABLE IF EXISTS agreements;
+    DROP TABLE IF EXISTS historical_planet;
+    DROP TABLE IF EXISTS historical_polity;
+    DROP TABLE IF EXISTS population_transfers;
+    DROP TABLE IF EXISTS unclaimed_systems;
+    DROP TABLE IF EXISTS unclaimed_planets;
+"""

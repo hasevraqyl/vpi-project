@@ -6,6 +6,8 @@ class Techs(object):
 
 
 class Buildings(object):
+    """we will possibly be deprecating the limit"""
+
     class B(object):
         def __init__(self, name, cost, res, lim, buildtime, maxi):
             self.name = name
@@ -25,6 +27,7 @@ class Buildings(object):
         B("Кварталы II", 2.0, 0.0, 0.0, 2, 1000),
         B("Кварталы III", 2.0, 0.0, 0.0, 4, 1000),
         B("Трущобы", 0.0, 0.0, 0.0, 1, 1000),
+        B("Зоны", 2.0, 0.0, 0.0, 2.0, 1000),
     }
 
     def buildingcheck(cls, name):

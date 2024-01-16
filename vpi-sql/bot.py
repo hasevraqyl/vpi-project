@@ -73,7 +73,7 @@ async def planet(interaction: discord.Interaction, first_value: str):
         await interaction.response.send_message(
             f"""Планета {first_value} находится в системе {system}.
             \n Общий прирост {abs(resources[0])}; базовая продукция {resources[1]}; гражданская продукция {resources[2]}; военная продукция {resources[3]}; накопленных ресурсов {round(abs(resources[4]), 2)}.
-            \n Население {round(resources[5], 2)}. Коэффициент занятости {round(resources[5]/(abs(resources[0])+resources[2]+resources[3]), 2)}."""
+            \n Население {round(resources[5], 2)}. Коэффициент занятости tbd."""
         )
 
 

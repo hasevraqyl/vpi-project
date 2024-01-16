@@ -3,8 +3,11 @@ from enum_implement import DiscordStatusCode
 from techs import Buildings
 import numpy as np
 import random
+import tomllib
 
 random.seed()
+with open("migrations.toml", mode="rb") as fp:
+    info = tomllib.load(fp)
 
 con = sqlite3.connect("vpi.db")
 cur = con.cursor()
@@ -48,12 +51,20 @@ def calculate_bp(bp_total, builds):
 
 
 def calculate_housing(builds):
-    total_housing = 0
+    total_housing = 0.0
     housing = ["Кварталы I", "Кварталы II", "Кварталы III", "Трущобы"]
     for b in builds:
         if b[0] in housing and b[1] == 0:
             total_housing = total_housing + 1.0
     return total_housing
+
+
+def calculate_space(builds):
+    total_space = 0.0
+    for b in builds:
+        if b[0] == "Зоны" and b[1] == 0:
+            total_space = total_space + 1.0
+    return total_space
 
 
 """temporary function"""
@@ -130,13 +141,13 @@ def calc_pop():
         for i in range(len(planets)):
             res2 = list(
                 cur.execute(
-                    "SELECT RO, BP, GP, VP, RS, pop from resources where planet = ?",
+                    "SELECT RO, BP, GP, VP, RS, pop, hosp from resources where planet = ?",
                     planets[i],
                 )
             )[0]
             cur.execute("DELETE from resources where planet = ?", (planets[i]))
             cur.executemany(
-                "INSERT into resources VALUES(?, ?, ?, ?, ?, ?, ?)",
+                "INSERT into resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         planets[i][0],
@@ -146,6 +157,7 @@ def calc_pop():
                         res2[3],
                         res2[4],
                         newpop[i],
+                        res2[6],
                     )
                 ],
             )
@@ -192,7 +204,7 @@ def calc_transfer():
             )
         fromplanet = list(
             cur.execute(
-                "SELECT pop, RO, BP, GP, VP, RS FROM resources WHERE planet = ?",
+                "SELECT pop, RO, BP, GP, VP, RS, hosp FROM resources WHERE planet = ?",
                 (e[0],),
             )
         )[0]
@@ -209,7 +221,7 @@ def calc_transfer():
             transfer = 1
         toplanet = list(
             cur.execute(
-                "SELECT pop, RO, BP, GP, VP, RS FROM resources WHERE planet = ?",
+                "SELECT pop, RO, BP, GP, VP, RS, hosp FROM resources WHERE planet = ?",
                 (e[1],),
             )
         )[0]
@@ -217,7 +229,7 @@ def calc_transfer():
         topop = topop + transfer
         cur.execute("DELETE FROM resources where planet = ?", (e[0],))
         cur.executemany(
-            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 (
                     e[0],
@@ -227,12 +239,13 @@ def calc_transfer():
                     fromplanet[4],
                     fromplanet[5],
                     frompop,
+                    fromplanet[6],
                 )
             ],
         )
         cur.execute("DELETE FROM resources where planet = ?", (e[1],))
         cur.executemany(
-            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 (
                     e[1],
@@ -242,6 +255,7 @@ def calc_transfer():
                     toplanet[4],
                     toplanet[5],
                     topop,
+                    toplanet[6],
                 )
             ],
         )
@@ -286,65 +300,21 @@ class Game(object):
     @classmethod
     def rollback(cls):
         print("откачено!!!!!!")
-        cur.execute("DROP TABLE IF EXISTS polities")
-        cur.execute("DROP TABLE IF EXISTS systems")
-        cur.execute("DROP TABLE IF EXISTS resources")
-        cur.execute("DROP TABLE IF EXISTS buildings")
-        cur.execute("DROP TABLE IF EXISTS stations")
-        cur.execute("DROP TABLE IF EXISTS agreements")
-        cur.execute("DROP TABLE IF EXISTS historical_planet")
-        cur.execute("DROP TABLE IF EXISTS historical_polity")
-        cur.execute("DROP TABLE IF EXISTS population_transfers")
-        cur.execute("DROP TABLE IF EXISTS unclaimed_systems")
-        cur.execute("DROP TABLE IF EXISTS unclaimed_planets")
-        cur.execute(
-            """CREATE TABLE polities (
-    polity_id INTEGER   PRIMARY KEY
-                        UNIQUE
-                        NOT NULL,
-    polity_name    TEXT UNIQUE
-                        NOT NULL,
-    polity_desc    TEXT,
-    creds          REAL NOT NULL
-                        DEFAULT (0.0) );"""
-        )
+        cur.executescript(info.get("rollback"))
+        cur.executescript(info.get("migration_prime"))
         polities = [
             (1, "pogglia", "no sex", 0.0),
             (2, "ubia", "sex", 0.0),
         ]
         cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?)", polities)
-        cur.execute(
-            """CREATE TABLE resources (
-    planet TEXT PRIMARY KEY
-                UNIQUE
-                NOT NULL,
-    RO     REAL NOT NULL
-                DEFAULT (0.0),
-    BP     REAL NOT NULL
-                DEFAULT (0.0),
-    GP     REAL NOT NULL
-                DEFAULT (0.0),
-    VP     REAL NOT NULL
-                DEFAULT (0.0),
-    RS     REAL NOT NULL
-                DEFAULT (0.0),
-    pop    REAL NOT NULL
-                DEFAULT (0.0));"""
-        )
         resources = [
-            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 10.0),
-            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0),
-            ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0, 10.0),
-            ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0, 4.0),
+            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 10.0, 1),
+            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0, 1),
+            ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0, 10.0, 1),
+            ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0, 4.0, 1),
         ]
-        cur.executemany("INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)", resources)
-        cur.execute(
-            """CREATE TABLE systems (
-    polity_id INTEGER NOT NULL,
-    system    TEXT    NOT NULL,
-    planet    TEXT    UNIQUE
-                      NOT NULL
-);"""
+        cur.executemany(
+            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)", resources
         )
         planets = [
             (1, "poggl-loire", "moskvabad"),
@@ -353,87 +323,7 @@ class Game(object):
             (2, "ub-burgundy", "ubia"),
         ]
         cur.executemany("INSERT INTO systems VALUES(?, ?, ?)", planets)
-        cur.execute(
-            """CREATE TABLE buildings (
-    planet TEXT       NOT NULL,
-    building TEXT     NOT NULL,
-    turns_remains INT NOT NULL,
-    id            INT NOT NULL
-        )"""
-        )
-        cur.execute(
-            """CREATE TABLE stations (
-    system TEXT       NOT NULL,
-    station TEXT     NOT NULL,
-    turns_remains INT  NOT NULL
-        )"""
-        )
-        cur.execute(
-            """CREATE TABLE agreements (
-    polity_1 TEXT    NOT NULL,
-    polity_2 TEXT    NOT NULL
-            )"""
-        )
-        cur.execute(
-            """CREATE TABLE historical_planet (
-    planet TEXT NOT NULL,
-    RO     REAL NOT NULL
-                DEFAULT (0.0),
-    BP     REAL NOT NULL
-                DEFAULT (0.0),
-    GP     REAL NOT NULL
-                DEFAULT (0.0),
-    VP     REAL NOT NULL
-                DEFAULT (0.0),
-    RS     REAL NOT NULL
-                DEFAULT (0.0),
-    pop    REAL NOT NULL
-                DEFAULT (0.0),
-    turn   INT  NOT NULL
-    );
-        """
-        )
-        cur.execute(
-            """CREATE TABLE population_transfers(
-        planetfrom TEXT NOT NULL,
-        planetto   TEXT NOT NULL
-        )
-"""
-        )
-        cur.execute(
-            """CREATE TABLE historical_polity(
-            polity_id INTEGER
-                        NOT NULL,
-    polity_name    TEXT
-                        NOT NULL,
-    polity_desc    TEXT,
-    creds          REAL NOT NULL
-                        DEFAULT (0.0),
-    turn           INT  NOT NULL
-        )"""
-        )
-        cur.execute(
-            """CREATE TABLE unclaimed_systems(
-                    system TEXT   NOT NULL,
-                    planet TEXT   UNIQUE
-                                  NOT NULL
-        )"""
-        )
-        cur.execute(
-            """CREATE TABLE unclaimed_planets(
-            planet TEXT PRIMARY KEY
-                        UNIQUE
-                        NOT NULL,
-            RO     REAL NOT NULL
-                DEFAULT (0.0),
-            BP     REAL NOT NULL
-                DEFAULT (0.0),
-            GP     REAL NOT NULL
-                DEFAULT (0.0),
-            VP     REAL NOT NULL
-                DEFAULT (0.0)
-        )"""
-        )
+
         con.commit
         return DiscordStatusCode.all_clear
 
@@ -473,7 +363,7 @@ class Game(object):
             ):
                 for row3 in list(
                     cur.execute(
-                        "SELECT RO, BP, RS, GP, VP, pop FROM resources WHERE planet = ?",
+                        "SELECT RO, BP, RS, GP, VP, pop, hosp FROM resources WHERE planet = ?",
                         (row2[1],),
                     )
                 ):
@@ -492,13 +382,13 @@ class Game(object):
                     if coefpop > 1:
                         coefpop = 1
                     coefhouse = calculate_housing(builds) / row3[5]
-                    coeftotal = (coefpop * 0, 3 + coefhouse * 0, 7)
+                    coeftotal = coefpop * 0.3 + coefhouse * 0.7
                     bp = calculate_bp(row3[1], builds)
                     rsnew = row3[2] + ((row3[0] - bp) * coeftotal)
                     popnew = row3[5] * 1.01
                     cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
                     cur.executemany(
-                        "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)",
+                        "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
                         [
                             (
                                 row2[1],
@@ -508,6 +398,7 @@ class Game(object):
                                 row3[4],
                                 rsnew,
                                 popnew,
+                                row3[6],
                             ),
                         ],
                     )
@@ -705,12 +596,13 @@ class Game(object):
             return DiscordStatusCode.no_elem
         planet_resources = list(
             cur.execute(
-                "SELECT RO, BP, RS, GP, VP, pop FROM resources where planet = ?", (pln,)
+                "SELECT RO, BP, RS, GP, VP, pop, hosp FROM resources where planet = ?",
+                (pln,),
             )
         )
         cur.execute("DELETE from resources WHERE planet = ?", (pln,))
         cur.executemany(
-            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?)",
+            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 (
                     pln,
@@ -719,6 +611,7 @@ class Game(object):
                     planet_resources[0][3],
                     planet_resources[0][4],
                     planet_resources[0][2],
+                    planet_resources[0][5],
                     planet_resources[0][6],
                 )
             ],
@@ -836,7 +729,7 @@ class Game(object):
             )
             ro = random.randint(4, 15)
             cur.executemany(
-                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         planet[0],
@@ -846,6 +739,7 @@ class Game(object):
                         0.0,
                         0.0,
                         0.0,
+                        0,
                     )
                 ],
             )
@@ -862,13 +756,18 @@ class Game(object):
         if not flag:
             return DiscordStatusCode.invalid_elem
         planet = list(
-            cur.execute("SELECT planet from systems where planet = ?", (pln,))
+            cur.execute("SELECT planet, hosp from systems where planet = ?", (pln,))
         )
         if len(planet) == 0:
             return DiscordStatusCode.no_elem
         old_buildings = list(
             cur.execute("SELECT building from buildings where planet = ?", (pln,))
         )
+        if building in ["Кварталы I", "Квартал II", "Квартал III", "Трущобы"]:
+            if (
+                calculate_housing(old_buildings) + 1 > calculate_space(old_buildings)
+            ) and planet[0][1] == 0:
+                return DiscordStatusCode.redundant_elem
         n = 0
         for old_building in old_buildings:
             if old_building[0] == building:
