@@ -349,6 +349,43 @@ async def transfer(
 
 @client.tree.command()
 @app_commands.describe(
+    first_value="название политии", second_value="название технологии"
+)
+async def research_tech(
+    interaction: discord.Interaction, first_value: str, second_value: str
+):
+    if interaction.user.id in auth_user_ids:
+        """Начинаем исследование технологии."""
+        cures, status = Game.research_tech(first_value, second_value)
+        if status.name == "no_elem":
+            await interaction.response.send_message(
+                "Проверьте правильность параметров; империи не существует."
+            )
+        elif status.name == "no_table":
+            await interaction.response.send_message("Ошибка. Перезапустите игру.")
+        if status.name == "invalid_elem":
+            await interaction.response.send_message("Ошибка. Технологии не существует.")
+        if status.name == "redundant_elem":
+            await interaction.response.send_message(
+                "Технология уже исследована или исследуется."
+            )
+        if status.name == "unknown":
+            await interaction.response.send_message("э")
+        else:
+            if cures == "":
+                await interaction.response.send_message(
+                    f"Начато исследование технологии {second_value}"
+                )
+            else:
+                await interaction.response.send_message(
+                    f"Начато исследование технологии {second_value}. Прекращено исследование {cures}."
+                )
+    else:
+        await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
+
+
+@client.tree.command()
+@app_commands.describe(
     first_value="название первой империи", second_value="название второй империи"
 )
 async def shengen(
