@@ -367,12 +367,12 @@ class Game(object):
             "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)", resources
         )
         planets = [
-            (1, "poggl-loire", "moskvabad"),
-            (1, "poggl-loire", "rashidun"),
-            (2, "ub-burgundy", "zumbia"),
-            (2, "ub-burgundy", "ubia"),
+            (1, "poggl-loire", "moskvabad", 1),
+            (1, "poggl-loire", "rashidun", 1),
+            (2, "ub-burgundy", "zumbia", 1),
+            (2, "ub-burgundy", "ubia", 1),
         ]
-        cur.executemany("INSERT INTO systems VALUES(?, ?, ?)", planets)
+        cur.executemany("INSERT INTO systems VALUES(?, ?, ?, ?)", planets)
 
         con.commit
         return DiscordStatusCode.all_clear
@@ -564,7 +564,7 @@ class Game(object):
                 )
             )[0]
             cur.execute("DELETE from polities WHERE polity_id = ?", (row[0],))
-            cur.execute(
+            cur.executemany(
                 "INSERT INTO polities VALUES(?, ?, ?, ?, ?)",
                 [
                     (

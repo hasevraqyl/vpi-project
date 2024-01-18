@@ -34,7 +34,8 @@ migration_prime = """
     polity_id INTEGER NOT NULL,
     system    TEXT    NOT NULL,
     planet    TEXT    UNIQUE
-                      NOT NULL
+                      NOT NULL,
+    hosp      INT     NOT NULL
     );
     CREATE TABLE buildings (
     planet TEXT       NOT NULL,
