@@ -68,6 +68,14 @@ def calculate_space(builds):
     return total_space
 
 
+def calculate_academics(builds):
+    science_output = 0.0
+    for b in builds:
+        if b[0] == "Акакдемия" and b[1] == 0:
+            science_output = 0.0 + 0.2
+    return science_output
+
+
 """temporary function"""
 
 
@@ -378,7 +386,7 @@ class Game(object):
                 "SELECT polity_id, polity_name, polity_desc, creds, science FROM polities"
             )
         ):
-            calc_tech(row[0])
+            academics = 0.0
             turnpol = list(
                 cur.execute(
                     "SELECT MAX(turn) from historical_polity where polity_id = ?",
@@ -420,6 +428,7 @@ class Game(object):
                             (row2[1],),
                         )
                     )
+                    academics = academics + calculate_academics(builds)
                     """coefpop will later be calculated through other means"""
                     coefpop = row3[5] / calculate_employment(builds)
                     if coefpop > 1:
@@ -475,7 +484,7 @@ class Game(object):
                     )[0][0]
                     cur.execute("DELETE from polities WHERE polity_id = ?", (row[0],))
                     cur.executemany(
-                        "INSERT INTO polities VALUES(?, ?, ?, ?)",
+                        "INSERT INTO polities VALUES(?, ?, ?, ?, ?)",
                         [
                             (
                                 row[0],
@@ -511,7 +520,7 @@ class Game(object):
                                 "DELETE from polities WHERE polity_id = ?", (row[0],)
                             )
                             cur.executemany(
-                                "INSERT INTO polities VALUES(?, ?, ?, ?)",
+                                "INSERT INTO polities VALUES(?, ?, ?, ?, ?)",
                                 [
                                     (
                                         row[0],
@@ -548,6 +557,26 @@ class Game(object):
                                 )
                             ],
                         )
+            new_pol = list(
+                cur.execute(
+                    "SELECT polity_id, polity_name, polity_desc, creds, science from polities where polity_id = ?",
+                    (row[0],),
+                )
+            )[0]
+            cur.execute("DELETE from polities WHERE polity_id = ?", (row[0],))
+            cur.execute(
+                "INSERT INTO polities VALUES(?, ?, ?, ?, ?)",
+                [
+                    (
+                        new_pol[0],
+                        new_pol[1],
+                        new_pol[2],
+                        new_pol[3],
+                        academics,
+                    )
+                ],
+            )
+            calc_tech(row[0])
         calc_pop()
         calc_transfer()
         con.commit
