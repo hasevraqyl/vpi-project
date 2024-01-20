@@ -83,6 +83,9 @@ def calculate_employment(builds):
     return 1.0
 
 
+"this function calculates the status of tech research"
+
+
 def calc_tech(pol):
     techs = cur.execute(
         "SELECT tech_name, cost_left, currently_researched from techs WHERE polity_id = ?",
@@ -119,6 +122,9 @@ def calc_tech(pol):
             con.commit()
             return
     return
+
+
+"this function calculates the population after voluntary migration"
 
 
 def calc_pop():
@@ -210,6 +216,9 @@ def calc_pop():
             )
     con.commit()
     return
+
+
+"this function calculates the population after forced transfers"
 
 
 def calc_transfer():
@@ -347,6 +356,8 @@ class Game(object):
         ql = 50 * qu_n / (res)
         return ql, DiscordStatusCode.all_clear"""
 
+    "this function restarts the game from a clean slate"
+
     @classmethod
     def rollback(cls):
         print("откачено!!!!!!")
@@ -376,6 +387,8 @@ class Game(object):
 
         con.commit
         return DiscordStatusCode.all_clear
+
+    "this function makes a new turn (more comments to come)"
 
     @classmethod
     def turn(cls):
@@ -583,6 +596,8 @@ class Game(object):
 
         return DiscordStatusCode.all_clear
 
+    "this function fetches information about a planet"
+
     @classmethod
     def fetch_Planet(cls, pln):
         if not check_table():
@@ -599,6 +614,8 @@ class Game(object):
             )
         )[0]
         return planet_system, planet_resources, DiscordStatusCode.all_clear
+
+    "this function fetches information about a system"
 
     @classmethod
     def fetch_System(cls, sys):
@@ -637,6 +654,8 @@ class Game(object):
         )[0][0]
         return polity, planet_string, sst, DiscordStatusCode.all_clear
 
+    "this function fetches information about a polity"
+
     @classmethod
     def fetch_Polity(cls, pol):
         if not check_table():
@@ -656,6 +675,8 @@ class Game(object):
             cur.execute("SELECT creds FROM polities where polity_id = ?", (pl_sys[0]))
         )[0][0]
         return creds, system_string, DiscordStatusCode.all_clear
+
+    "possibly deprecated: this function adds basic production to a plent"
 
     @classmethod
     def add_BP(cls, pln, rsrs):
@@ -692,6 +713,8 @@ class Game(object):
         )
         con.commit()
         return DiscordStatusCode.all_clear
+
+    "this function transfers a system from one empire to another"
 
     @classmethod
     def transfer_System(cls, sys, pol):
@@ -740,6 +763,8 @@ class Game(object):
         con.commit()
         return pl_name[0][0], DiscordStatusCode.all_clear
 
+    "this function creates an uninhabited unclaimed planet"
+
     @classmethod
     def create_planet(cls, sys, pln):
         if not check_table():
@@ -773,6 +798,8 @@ class Game(object):
         )
         con.commit()
         return DiscordStatusCode.all_clear
+
+    "this function adds an unclaimed system to the empire"
 
     @classmethod
     def claim_system(cls, plt, sys):
@@ -822,6 +849,8 @@ class Game(object):
         con.commit
         return DiscordStatusCode.all_clear
 
+    "this function starts construction on the planet"
+
     @classmethod
     def build_Building(cls, pln, building):
         if not check_table():
@@ -862,6 +891,8 @@ class Game(object):
         con.commit()
         return DiscordStatusCode.all_clear
 
+    "this function fetches the list of all buildings on the planet (completed or not)"
+
     @classmethod
     def planet_Buildings(cls, pln):
         if not check_table():
@@ -874,6 +905,8 @@ class Game(object):
         if len(buildings_list) == 0:
             return None, DiscordStatusCode.no_elem
         return buildings_list, DiscordStatusCode.all_clear
+
+    "this function builds a station in the system"
 
     @classmethod
     def build_Station(cls, sys):
@@ -946,6 +979,8 @@ class Game(object):
                 ]
         return bf, stl, planet[0], DiscordStatusCode.all_clear
 
+    "this function fetches polity finances over time"
+
     @classmethod
     def polity_finances(cls, plt):
         if not check_table():
@@ -974,6 +1009,8 @@ class Game(object):
             if i == (len(info) - 1):
                 stl = info[i][2]
         return bf, stl, planet[2], DiscordStatusCode.all_clear
+
+    "this function activates a deportation policy"
 
     @classmethod
     def deport(cls, pln_1, pln_2):
@@ -1008,6 +1045,8 @@ class Game(object):
         )
         con.commit
         return DiscordStatusCode.all_clear
+
+    "this function begins researching new technology"
 
     @classmethod
     def research_tech(cls, pol, tech):
@@ -1080,6 +1119,8 @@ class Game(object):
             return currently_researched, DiscordStatusCode.all_clear
         else:
             return None, DiscordStatusCode.invalid_elem
+
+    "this function creates a common demographic space from two empires"
 
     @classmethod
     def agree(cls, pol_1, pol_2):
