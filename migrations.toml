@@ -106,6 +106,15 @@ migration_prime = """
         cost_left REAL NOT NULL,
         currently_researched INT NOT NULL
     );
+    CREATE TABLE fleets(
+        polity_id INT NOT NULL,
+        own_id    INT NOT NULL,
+        position TEXT NOT NULL
+    );
+    CREATE TABLE spaceships(
+        fleet INT NOT NULL,
+        limit float NOT NULL
+    )
     """
 rollback = """
     DROP TABLE IF EXISTS polities;
@@ -120,4 +129,6 @@ rollback = """
     DROP TABLE IF EXISTS unclaimed_systems;
     DROP TABLE IF EXISTS unclaimed_planets;
     DROP TABLE IF EXISTS techs;
+    DROP TABLE IF EXISTS fleets;
+    DROP TABLE IF EXISTS spaceships;
 """
