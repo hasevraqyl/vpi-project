@@ -116,6 +116,11 @@ migration_prime = """
         limit float NOT NULL
     )
     """
+    "please i have literally zero idea what is going on with fleets at this point"
+    "with ships too it's fucking insane man"
+    "jesus"
+    "anyways i need to find out whether modules affect the other stuff"
+    "this is the most important thing for now"
 rollback = """
     DROP TABLE IF EXISTS polities;
     DROP TABLE IF EXISTS systems;

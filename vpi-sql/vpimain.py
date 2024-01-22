@@ -22,6 +22,9 @@ def is_float(string):
         return False
 
 
+"deprecated function? methinks?"
+
+
 def comma_stringer(bad_list):
     string = ""
     i = 0
@@ -36,12 +39,18 @@ def comma_stringer(bad_list):
     return string
 
 
+"note to self: replace with a function that checks all tables"
+
+
 def check_table():
     r = cur.execute("SELECT name from sqlite_master WHERE name = 'systems'")
     if r.fetchone() is None:
         print("таблицы нету")
         return False
     return True
+
+
+"possibly deprecated, possibly will be brought in later, donotdelete"
 
 
 def calculate_bp(bp_total, builds):
@@ -77,6 +86,8 @@ def calculate_academics(builds):
 
 
 """temporary function"""
+
+"actually i can finally begin working on this one properly"
 
 
 def calculate_employment(builds):
