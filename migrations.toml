@@ -113,14 +113,14 @@ migration_prime = """
     );
     CREATE TABLE spaceships(
         fleet INT NOT NULL,
+        ship_id INT NOT NULL,
         limit float NOT NULL
     )
-    """
-    "please i have literally zero idea what is going on with fleets at this point"
-    "with ships too it's fucking insane man"
-    "jesus"
-    "anyways i need to find out whether modules affect the other stuff"
-    "this is the most important thing for now"
+    CREATE TABLE modules(
+        ship_id INT NOT NULL,
+        type TEXT NOT NULL,
+        value float NOT NULL
+    )
 rollback = """
     DROP TABLE IF EXISTS polities;
     DROP TABLE IF EXISTS systems;
@@ -136,4 +136,5 @@ rollback = """
     DROP TABLE IF EXISTS techs;
     DROP TABLE IF EXISTS fleets;
     DROP TABLE IF EXISTS spaceships;
+    DROP TABLE IF EXISTS modules;
 """
