@@ -9,6 +9,8 @@ migration_prime = """
     creds       REAL NOT NULL
                 DEFAULT (0.0),
     science     REAL NOT NULL
+                DEFAULT (0.0),
+    limit_pol       REAL NOT NULL
                 DEFAULT (0.0)
     );
     CREATE TABLE resources (
@@ -80,7 +82,11 @@ migration_prime = """
     polity_desc    TEXT,
     creds          REAL NOT NULL
                         DEFAULT (0.0),
-    turn           INT  NOT NULL
+    turn           INT  NOT NULL,
+    science     REAL NOT NULL
+                DEFAULT (0.0),
+    limit_hpol       REAL NOT NULL
+                DEFAULT (0.0)
     );
     CREATE TABLE unclaimed_systems(
                     system TEXT   NOT NULL,
@@ -114,13 +120,13 @@ migration_prime = """
     CREATE TABLE spaceships(
         fleet INT NOT NULL,
         ship_id INT NOT NULL,
-        limit float NOT NULL
-    )
+        limit_ship REAL NOT NULL
+    );
     CREATE TABLE modules(
         ship_id INT NOT NULL,
         type TEXT NOT NULL,
         value float NOT NULL
-    )
+    );"""
 rollback = """
     DROP TABLE IF EXISTS polities;
     DROP TABLE IF EXISTS systems;

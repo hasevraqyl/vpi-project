@@ -64,7 +64,7 @@ async def restart(interaction: discord.Interaction):
         """Перезапускает игру. ВНИМАНИЕ! ВЫ ТОЧНО УВЕРЕНЫ?"""
         Game.rollback()
         message.set_string("Игра перезапущена и откачена к начальному состоянию.")
-    await interaction.response.send_message(message.string)
+    await interaction.response.send_message(message.get_string())
 
 
 @client.tree.command()
@@ -160,7 +160,7 @@ async def demographics(interaction: discord.Interaction, first_value: str):
         За последний год население изменилось на {round((1-(stl[5]/pln[5]))*100, 2)}% c {round(stl[5], 2)}.
         За последние пять лет население изменилось на {round((1-(bf[5]/pln[5]))*100, 2)}% с {round(bf[5], 2)}."""
             )
-    await interaction.response.send_message(message.get_string)
+    await interaction.response.send_message(message.get_string())
 
 
 @client.tree.command()

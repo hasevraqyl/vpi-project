@@ -60,6 +60,13 @@ def calculate_bp(bp_total, builds):
     return bp_total
 
 
+def calculate_vp(vp_total, builds):
+    for b in builds:
+        if b[0] == "ВПК" and b[1] == 0:
+            vp_total = vp_total + 3.0
+    return vp_total
+
+
 def calculate_housing(builds):
     total_housing = 0.0
     housing = ["Кварталы I", "Кварталы II", "Кварталы III", "Трущобы"]
@@ -81,7 +88,7 @@ def calculate_academics(builds):
     science_output = 0.0
     for b in builds:
         if b[0] == "Акакдемия" and b[1] == 0:
-            science_output = 0.0 + 0.2
+            science_output = science_output + 0.2
     return science_output
 
 
@@ -254,7 +261,7 @@ def calc_transfer():
         else:
             pol = list(
                 cur.execute(
-                    "SELECT polity_name, polity_desc, creds, science from polities where polity_id = ?",
+                    "SELECT polity_name, polity_desc, creds, science, limit_pol from polities where polity_id = ?",
                     sys1[0],
                 )
             )[0]
@@ -268,6 +275,7 @@ def calc_transfer():
                         pol[1],
                         (pol[2] - 10),
                         pol[4],
+                        pol[5],
                     )
                 ],
             )
@@ -375,10 +383,10 @@ class Game(object):
         cur.executescript(info.get("rollback"))
         cur.executescript(info.get("migration_prime"))
         polities = [
-            (1, "pogglia", "no sex", 0.0, 0.0),
-            (2, "ubia", "sex", 0.0, 0.0),
+            (1, "pogglia", "no sex", 0.0, 0.0, 0.0),
+            (2, "ubia", "sex", 0.0, 0.0, 0.0),
         ]
-        cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?, ?)", polities)
+        cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)", polities)
         resources = [
             ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 10.0, 1),
             ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0, 1),
@@ -407,7 +415,7 @@ class Game(object):
             return DiscordStatusCode.no_table
         for row in list(
             cur.execute(
-                "SELECT polity_id, polity_name, polity_desc, creds, science FROM polities"
+                "SELECT polity_id, polity_name, polity_desc, creds, science, limit_pol FROM polities"
             )
         ):
             academics = 0.0
@@ -420,7 +428,7 @@ class Game(object):
             if turnpol is None:
                 turnpol = 1
             cur.executemany(
-                "INSERT INTO historical_polity VALUES(?, ?, ?, ?, ?)",
+                "INSERT INTO historical_polity VALUES(?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         row[0],
@@ -428,6 +436,8 @@ class Game(object):
                         row[2],
                         row[3],
                         turnpol,
+                        row[4],
+                        row[5],
                     )
                 ],
             )
@@ -460,6 +470,7 @@ class Game(object):
                     coefhouse = calculate_housing(builds) / row3[5]
                     coeftotal = coefpop * 0.3 + coefhouse * 0.7
                     bp = calculate_bp(row3[1], builds)
+                    vp = calculate_vp(row3[4], builds)
                     rsnew = row3[2] + ((row3[0] - bp) * coeftotal)
                     popnew = row3[5] * 1.01
                     cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
@@ -501,21 +512,23 @@ class Game(object):
                             )
                         ],
                     )
-                    newval = list(
+                    new_values = list(
                         cur.execute(
-                            "SELECT creds FROM polities WHERE polity_id = ?", (row[0],)
+                            "SELECT creds, limit_pol FROM polities WHERE polity_id = ?",
+                            (row[0],),
                         )
-                    )[0][0]
+                    )[0]
                     cur.execute("DELETE from polities WHERE polity_id = ?", (row[0],))
                     cur.executemany(
-                        "INSERT INTO polities VALUES(?, ?, ?, ?, ?)",
+                        "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)",
                         [
                             (
                                 row[0],
                                 row[1],
                                 row[2],
-                                newval + (bp * coefpop),
-                                row[4],
+                                new_values[0] + (bp * coefpop),
+                                new_values[1] + (vp * coefpop),
+                                row[5],
                             )
                         ],
                     )
@@ -544,7 +557,7 @@ class Game(object):
                                 "DELETE from polities WHERE polity_id = ?", (row[0],)
                             )
                             cur.executemany(
-                                "INSERT INTO polities VALUES(?, ?, ?, ?, ?)",
+                                "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)",
                                 [
                                     (
                                         row[0],
@@ -553,6 +566,7 @@ class Game(object):
                                         newval2
                                         - Buildings.costfetch(Buildings, row4[0]),
                                         row[4],
+                                        row[5],
                                     )
                                 ],
                             )
@@ -583,13 +597,13 @@ class Game(object):
                         )
             new_pol = list(
                 cur.execute(
-                    "SELECT polity_id, polity_name, polity_desc, creds, science from polities where polity_id = ?",
+                    "SELECT polity_id, polity_name, polity_desc, creds, science, limit_pol from polities where polity_id = ?",
                     (row[0],),
                 )
             )[0]
             cur.execute("DELETE from polities WHERE polity_id = ?", (row[0],))
             cur.executemany(
-                "INSERT INTO polities VALUES(?, ?, ?, ?, ?)",
+                "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)",
                 [
                     (
                         new_pol[0],
@@ -597,6 +611,7 @@ class Game(object):
                         new_pol[2],
                         new_pol[3],
                         academics,
+                        new_pol[5],
                     )
                 ],
             )
