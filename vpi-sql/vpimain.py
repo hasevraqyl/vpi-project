@@ -14,6 +14,34 @@ con = sqlite3.connect("vpi.db")
 cur = con.cursor()
 
 
+class Polity(object):
+    def __init__(self, pol_id):
+        self.array = list(
+            cur.execute("SELECT * FROM polities WHERE polity_id = ?", (pol_id,))
+        )[0]
+        self.id = self.array[0]
+        self.name = self.array[1]
+        self.desc = self.array[2]
+        self.creds = self.array[3]
+        self.science = self.array[4]
+        self.limit_pol = self.array[5]
+
+
+class Resources(object):
+    def __init__(self, pl_name):
+        self.array = list(
+            cur.execute("SELECT * FROM resources where planet = ?", (pl_name,))
+        )[0]
+        self.name = self.array[0]
+        self.ro = self.array[1]
+        self.bp = self.array[2]
+        self.gp = self.array[3]
+        self.vp = self.array[4]
+        self.rs = self.array[5]
+        self.pop = self.array[6]
+        self.hosp = self.array[7]
+
+
 def is_float(string):
     try:
         float(string)
@@ -210,25 +238,20 @@ def calc_pop():
         for i in range(len(pops)):
             newpop.append(pops[i] * 0.9 + eq[i] * 0.1)
         for i in range(len(planets)):
-            res2 = list(
-                cur.execute(
-                    "SELECT RO, BP, GP, VP, RS, pop, hosp from resources where planet = ?",
-                    planets[i],
-                )
-            )[0]
+            res2 = Resources(planets[i][0])
             cur.execute("DELETE from resources where planet = ?", (planets[i]))
             cur.executemany(
                 "INSERT into resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         planets[i][0],
-                        res2[0],
-                        res2[1],
-                        res2[2],
-                        res2[3],
-                        res2[4],
+                        res2.ro,
+                        res2.bp,
+                        res2.gp,
+                        res2.vp,
+                        res2.rs,
                         newpop[i],
-                        res2[6],
+                        res2.hosp,
                     )
                 ],
             )
@@ -259,33 +282,23 @@ def calc_transfer():
                 ],
             )
         else:
-            pol = list(
-                cur.execute(
-                    "SELECT polity_name, polity_desc, creds, science, limit_pol from polities where polity_id = ?",
-                    sys1[0],
-                )
-            )[0]
+            pol = Polity(sys1[0][0])
             cur.execute("DELETE from polities WHERE polity_id = ?", sys1[0])
             cur.executemany(
-                "INSERT INTO polities VALUES(?, ?, ?, ?, ?)",
+                "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)",
                 [
                     (
-                        sys1[0][0],
-                        pol[0],
-                        pol[1],
-                        (pol[2] - 10),
-                        pol[4],
-                        pol[5],
+                        pol.id,
+                        pol.name,
+                        pol.desc,
+                        (pol.creds - 10),
+                        pol.science,
+                        pol.limit_pol,
                     )
                 ],
             )
-        fromplanet = list(
-            cur.execute(
-                "SELECT pop, RO, BP, GP, VP, RS, hosp FROM resources WHERE planet = ?",
-                (e[0],),
-            )
-        )[0]
-        frompop = fromplanet[0]
+        fromplanet = Resources(e[0])
+        frompop = fromplanet.pop
         transfer = 0
         if frompop < 1.2:
             transfer = frompop
@@ -296,13 +309,8 @@ def calc_transfer():
         else:
             frompop = frompop - 1
             transfer = 1
-        toplanet = list(
-            cur.execute(
-                "SELECT pop, RO, BP, GP, VP, RS, hosp FROM resources WHERE planet = ?",
-                (e[1],),
-            )
-        )[0]
-        topop = toplanet[0]
+        toplanet = Resources(e[1])
+        topop = toplanet.pop
         topop = topop + transfer
         cur.execute("DELETE FROM resources where planet = ?", (e[0],))
         cur.executemany(
@@ -310,13 +318,13 @@ def calc_transfer():
             [
                 (
                     e[0],
-                    fromplanet[1],
-                    fromplanet[2],
-                    fromplanet[3],
-                    fromplanet[4],
-                    fromplanet[5],
+                    fromplanet.ro,
+                    fromplanet.bp,
+                    fromplanet.gp,
+                    fromplanet.vp,
+                    fromplanet.rs,
                     frompop,
-                    fromplanet[6],
+                    fromplanet.hosp,
                 )
             ],
         )
@@ -326,13 +334,13 @@ def calc_transfer():
             [
                 (
                     e[1],
-                    toplanet[1],
-                    toplanet[2],
-                    toplanet[3],
-                    toplanet[4],
-                    toplanet[5],
+                    toplanet.ro,
+                    toplanet.bp,
+                    toplanet.gp,
+                    toplanet.vp,
+                    toplanet.rs,
                     topop,
-                    toplanet[6],
+                    toplanet.hosp,
                 )
             ],
         )
@@ -595,23 +603,18 @@ class Game(object):
                                 )
                             ],
                         )
-            new_pol = list(
-                cur.execute(
-                    "SELECT polity_id, polity_name, polity_desc, creds, science, limit_pol from polities where polity_id = ?",
-                    (row[0],),
-                )
-            )[0]
+            new_pol = Polity(row[0])
             cur.execute("DELETE from polities WHERE polity_id = ?", (row[0],))
             cur.executemany(
                 "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)",
                 [
                     (
-                        new_pol[0],
-                        new_pol[1],
-                        new_pol[2],
-                        new_pol[3],
+                        new_pol.id,
+                        new_pol.name,
+                        new_pol.desc,
+                        new_pol.creds,
                         academics,
-                        new_pol[5],
+                        new_pol.limit_pol,
                     )
                 ],
             )
@@ -634,12 +637,8 @@ class Game(object):
         if len(pl_sys) == 0:
             return None, None, DiscordStatusCode.no_elem
         planet_system = pl_sys[0][0]
-        planet_resources = list(
-            cur.execute(
-                "SELECT RO, BP, GP, VP, RS, pop FROM resources where planet = ?", (pln,)
-            )
-        )[0]
-        return planet_system, planet_resources, DiscordStatusCode.all_clear
+        planet_resources = Resources(pln)
+        return planet_system, planet_resources.array.pop(0), DiscordStatusCode.all_clear
 
     "this function fetches information about a system"
 
@@ -715,25 +714,20 @@ class Game(object):
             == 0
         ):
             return DiscordStatusCode.no_elem
-        planet_resources = list(
-            cur.execute(
-                "SELECT RO, BP, RS, GP, VP, pop, hosp FROM resources where planet = ?",
-                (pln,),
-            )
-        )
+        planet_resources = Resources(pln)
         cur.execute("DELETE from resources WHERE planet = ?", (pln,))
         cur.executemany(
             "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 (
                     pln,
-                    planet_resources[0][0],
+                    planet_resources.ro,
                     rsrs,
-                    planet_resources[0][3],
-                    planet_resources[0][4],
-                    planet_resources[0][2],
-                    planet_resources[0][5],
-                    planet_resources[0][6],
+                    planet_resources.vp,
+                    planet_resources.gp,
+                    planet_resources.rs,
+                    planet_resources.pop,
+                    planet_resources.hosp,
                 )
             ],
         )
