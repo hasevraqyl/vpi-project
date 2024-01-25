@@ -14,34 +14,6 @@ con = sqlite3.connect("vpi.db")
 cur = con.cursor()
 
 
-class Polity(object):
-    def __init__(self, pol_id):
-        self.array = list(
-            cur.execute("SELECT * FROM polities WHERE polity_id = ?", (pol_id,))
-        )[0]
-        self.id = self.array[0]
-        self.name = self.array[1]
-        self.desc = self.array[2]
-        self.creds = self.array[3]
-        self.science = self.array[4]
-        self.limit_pol = self.array[5]
-
-
-class Resources(object):
-    def __init__(self, pl_name):
-        self.array = list(
-            cur.execute("SELECT * FROM resources where planet = ?", (pl_name,))
-        )[0]
-        self.name = self.array[0]
-        self.ro = self.array[1]
-        self.bp = self.array[2]
-        self.gp = self.array[3]
-        self.vp = self.array[4]
-        self.rs = self.array[5]
-        self.pop = self.array[6]
-        self.hosp = self.array[7]
-
-
 def is_float(string):
     try:
         float(string)
@@ -238,22 +210,9 @@ def calc_pop():
         for i in range(len(pops)):
             newpop.append(pops[i] * 0.9 + eq[i] * 0.1)
         for i in range(len(planets)):
-            res2 = Resources(planets[i][0])
-            cur.execute("DELETE from resources where planet = ?", (planets[i]))
-            cur.executemany(
-                "INSERT into resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                    (
-                        planets[i][0],
-                        res2.ro,
-                        res2.bp,
-                        res2.gp,
-                        res2.vp,
-                        res2.rs,
-                        newpop[i],
-                        res2.hosp,
-                    )
-                ],
+            cur.execute(
+                "UPDATE resources SET pop = ? WHERE planet = ?",
+                (newpop[i], planets[i][0]),
             )
     con.commit()
     return
@@ -282,23 +241,19 @@ def calc_transfer():
                 ],
             )
         else:
-            pol = Polity(sys1[0][0])
-            cur.execute("DELETE from polities WHERE polity_id = ?", sys1[0])
-            cur.executemany(
-                "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)",
-                [
-                    (
-                        pol.id,
-                        pol.name,
-                        pol.desc,
-                        (pol.creds - 10),
-                        pol.science,
-                        pol.limit_pol,
-                    )
-                ],
+            creds = list(
+                cur.execute("SELECT creds from polities WHERE polity_id = ?", sys1[0])
+            )[0][0]
+            cur.execute(
+                "UPDATE polities SET creds = ? WHERE id = ?",
+                (
+                    (creds - 10),
+                    sys1[0][0],
+                ),
             )
-        fromplanet = Resources(e[0])
-        frompop = fromplanet.pop
+        frompop = list(
+            cur.execute("SELECT pop from resources WHERE planet = ?", (e[0],))
+        )[0][0]
         transfer = 0
         if frompop < 1.2:
             transfer = frompop
@@ -309,41 +264,12 @@ def calc_transfer():
         else:
             frompop = frompop - 1
             transfer = 1
-        toplanet = Resources(e[1])
-        topop = toplanet.pop
+        topop = list(
+            cur.execute("SELECT pop from resources WHERE planet = ?", (e[1],))
+        )[0][0]
         topop = topop + transfer
-        cur.execute("DELETE FROM resources where planet = ?", (e[0],))
-        cur.executemany(
-            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                (
-                    e[0],
-                    fromplanet.ro,
-                    fromplanet.bp,
-                    fromplanet.gp,
-                    fromplanet.vp,
-                    fromplanet.rs,
-                    frompop,
-                    fromplanet.hosp,
-                )
-            ],
-        )
-        cur.execute("DELETE FROM resources where planet = ?", (e[1],))
-        cur.executemany(
-            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                (
-                    e[1],
-                    toplanet.ro,
-                    toplanet.bp,
-                    toplanet.gp,
-                    toplanet.vp,
-                    toplanet.rs,
-                    topop,
-                    toplanet.hosp,
-                )
-            ],
-        )
+        cur.execute("UPDATE resources SET pop = ? WHERE planet = ?", (e[0],))
+        cur.execute("UPDATE resources SET pop = ? WHERE planet = ?", (e[1],))
     con.commit()
     return
 
@@ -603,20 +529,12 @@ class Game(object):
                                 )
                             ],
                         )
-            new_pol = Polity(row[0])
-            cur.execute("DELETE from polities WHERE polity_id = ?", (row[0],))
-            cur.executemany(
-                "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)",
-                [
-                    (
-                        new_pol.id,
-                        new_pol.name,
-                        new_pol.desc,
-                        new_pol.creds,
-                        academics,
-                        new_pol.limit_pol,
-                    )
-                ],
+            cur.execute(
+                "UPDATE polities SET science = ? WHERE polity_id = ?",
+                (
+                    academics,
+                    row[0],
+                ),
             )
             calc_tech(row[0])
         calc_pop()
@@ -637,8 +555,13 @@ class Game(object):
         if len(pl_sys) == 0:
             return None, None, DiscordStatusCode.no_elem
         planet_system = pl_sys[0][0]
-        planet_resources = Resources(pln)
-        return planet_system, planet_resources.array.pop(0), DiscordStatusCode.all_clear
+        planet_resources = list(
+            cur.execute(
+                "SELECT RO, BP, GP, VP, RS, pop, hosp FROM resources WHERE planet = ?",
+                (pln,),
+            )
+        )[0]
+        return planet_system, planet_resources, DiscordStatusCode.all_clear
 
     "this function fetches information about a system"
 
@@ -714,23 +637,7 @@ class Game(object):
             == 0
         ):
             return DiscordStatusCode.no_elem
-        planet_resources = Resources(pln)
-        cur.execute("DELETE from resources WHERE planet = ?", (pln,))
-        cur.executemany(
-            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                (
-                    pln,
-                    planet_resources.ro,
-                    rsrs,
-                    planet_resources.vp,
-                    planet_resources.gp,
-                    planet_resources.rs,
-                    planet_resources.pop,
-                    planet_resources.hosp,
-                )
-            ],
-        )
+        cur.execute("UPDATE resources SET BP = ? WHERE planet = ?", (pln,))
         con.commit()
         return DiscordStatusCode.all_clear
 
