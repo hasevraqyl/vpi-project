@@ -407,21 +407,19 @@ class Game(object):
                     vp = calculate_vp(row3[4], builds)
                     rsnew = row3[2] + ((row3[0] - bp) * coeftotal)
                     popnew = row3[5] * 1.01
-                    cur.execute("DELETE from resources WHERE planet = ?", (row2[1],))
-                    cur.executemany(
-                        "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-                        [
-                            (
-                                row2[1],
-                                row3[0],
-                                row3[1],
-                                row3[3],
-                                row3[4],
-                                rsnew,
-                                popnew,
-                                row3[6],
-                            ),
-                        ],
+                    cur.execute(
+                        "UPDATE resources SET RS = ? WHERE planet = ?",
+                        (
+                            rsnew,
+                            row2[1],
+                        ),
+                    )
+                    cur.execute(
+                        "UPDATE resources SET pop = ? WHERE planet = ?",
+                        (
+                            popnew,
+                            row2[1],
+                        ),
                     )
                     turn = list(
                         cur.execute(
@@ -452,32 +450,21 @@ class Game(object):
                             (row[0],),
                         )
                     )[0]
-                    cur.execute("DELETE from polities WHERE polity_id = ?", (row[0],))
-                    cur.executemany(
-                        "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)",
-                        [
-                            (
-                                row[0],
-                                row[1],
-                                row[2],
-                                new_values[0] + (bp * coefpop),
-                                new_values[1] + (vp * coefpop),
-                                row[5],
-                            )
-                        ],
+                    cur.execute(
+                        "UPDATE polities SET creds = ? WHERE polity_id = ?",
+                        (
+                            (new_values[0] + (bp * coefpop)),
+                            row[0],
+                        ),
+                    )
+                    cur.execute(
+                        "UPDATE polities SET science = ? WHERE polity_id = ?",
+                        (
+                            (new_values[1] + (vp * coefpop)),
+                            row[0],
+                        ),
                     )
                     for row4 in builds:
-                        cur.executemany(
-                            "DELETE from buildings where planet = ? and building = ? and turns_remains = ? and id = ?",
-                            [
-                                (
-                                    row2[1],
-                                    row4[0],
-                                    row4[1],
-                                    row4[2],
-                                )
-                            ],
-                        )
                         turns = row4[1]
                         if turns > 0:
                             turns = turns - 1
@@ -490,23 +477,25 @@ class Game(object):
                             cur.execute(
                                 "DELETE from polities WHERE polity_id = ?", (row[0],)
                             )
-                            cur.executemany(
-                                "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)",
-                                [
-                                    (
-                                        row[0],
-                                        row[1],
-                                        row[2],
-                                        newval2
-                                        - Buildings.costfetch(Buildings, row4[0]),
-                                        row[4],
-                                        row[5],
-                                    )
-                                ],
+                            cur.execute(
+                                "UPDATE polities SET creds = ? WHERE polity_id = ?",
+                                (
+                                    newval2 - Buildings.costfetch(Buildings, row4[0]),
+                                    row[0],
+                                ),
                             )
                         cur.executemany(
                             "INSERT INTO buildings VALUES(?, ?, ?, ?)",
                             [(row2[1], row4[0], turns, row4[2])],
+                        )
+                        cur.execute(
+                            "UPDATE buildings SET turns_remains = ? WHERE planet = ? and building = ? and id = ?",
+                            (
+                                turns,
+                                row2[1],
+                                row4[0],
+                                row4[2],
+                            ),
                         )
                 station = list(
                     cur.execute(
