@@ -87,7 +87,7 @@ def calculate_space(builds):
 def calculate_academics(builds):
     science_output = 0.0
     for b in builds:
-        if b[0] == "Акакдемия" and b[1] == 0:
+        if b[0] == "Академия" and b[1] == 0:
             science_output = science_output + 0.2
     return science_output
 
@@ -102,6 +102,18 @@ def calculate_employment(builds):
 
 
 "this function calculates the status of tech research"
+
+
+def calc_wearing(builds):
+    for b in builds:
+        if b[0] == "Кварталы I" and b[1] == 0:
+            if random.randint(0, 100) in [1, 2]:
+                cur.execute(
+                    "UPDATE buildings SET building = 'Трущобы' WHERE building = ? and id = ?",
+                    (b[0], b[2]),
+                )
+    con.commit()
+    return
 
 
 def calc_tech(pol):
@@ -396,6 +408,7 @@ class Game(object):
                             (row2[1],),
                         )
                     )
+
                     academics = academics + calculate_academics(builds)
                     """coefpop will later be calculated through other means"""
                     coefpop = row3[5] / calculate_employment(builds)
