@@ -25,6 +25,16 @@ def is_float(string):
 "deprecated function? methinks?"
 
 
+def rand_percent(arg):
+    if 0 >= arg:
+        return False
+    if 1 <= arg:
+        return True
+    if random.randint(0, 100) <= arg:
+        return True
+    return False
+
+
 def comma_stringer(bad_list):
     string = ""
     i = 0
@@ -107,7 +117,7 @@ def calculate_employment(builds):
 def calc_wearing(builds):
     for b in builds:
         if b[0] == "Кварталы I" and b[1] == 0:
-            if random.randint(0, 100) in [1, 2]:
+            if rand_percent(2):
                 cur.execute(
                     "UPDATE buildings SET building = 'Трущобы' WHERE building = ? and id = ?",
                     (b[0], b[2]),
