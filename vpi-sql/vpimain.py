@@ -105,10 +105,15 @@ def calculate_academics(builds):
 """temporary function"""
 
 "actually i can finally begin working on this one properly"
+"it is not done yet!!!!"
 
 
 def calculate_employment(builds):
-    return 1.0
+    em = 0.1
+    for b in builds:
+        if b[0] == "Академия" and b[1] == 0:
+            em = em + 1.0
+    return em
 
 
 "this function calculates the status of tech research"
@@ -210,15 +215,19 @@ def calc_pop():
                         (planet),
                     )
                 )
+                """
                 promz = len(
                     list(
                         cur.execute(
-                            """SELECT building from buildings WHERE building = 'Основные промзоны' AND planet = ?""",
+                            ""SELECT building from buildings WHERE building = 'Основные промзоны' AND planet = ?"",
                             (planet),
                         )
                     )
                 )
-                jobs = res[1] + res[2] + res[3] + res[4] + promz * 3
+                """
+                "this might also be deprecated?"
+                jobs = res[1] + res[2] + res[3] + res[4]
+                "+ promz * 3"
                 total = (
                     calculate_housing(builds) * 5 + jobs + calculate_employment(builds)
                 )
