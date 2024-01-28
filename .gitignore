@@ -1,5 +1,4 @@
 vpi.db
 config.toml
-.__pycache__
+__pycache__/
 .vs
-vpi-sql\__pycache__
