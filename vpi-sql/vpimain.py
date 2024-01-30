@@ -63,23 +63,26 @@ def check_table():
 "possibly deprecated, possibly will be brought in later, donotdelete"
 
 
-def calculate_bp(bp_total, builds):
-    for b in builds:
-        if b[0] == "Основные промзоны" and b[1] == 0:
-            bp_total = bp_total + 3.0
+def calculate_bp(bp_total, b):
+    if b[0] == "Основные промзоны" and b[1] == 0:
+        bp_total = bp_total + 3.0
     return bp_total
 
 
-def calculate_vp(vp_total, builds):
-    for b in builds:
-        if b[0] == "ВПК" and b[1] == 0:
-            vp_total = vp_total + 3.0
+def calculate_vp(vp_total, b):
+    if b[0] == "ВПК" and b[1] == 0:
+        vp_total = vp_total + 3.0
     return vp_total
 
 
-def calculate_housing(builds):
+def calculate_housing(bs):
     total_housing = 0.0
     housing = ["Кварталы I", "Кварталы II", "Кварталы III", "Трущобы"]
+    if not isinstance(bs[0], list):
+        builds = []
+        builds.append(bs)
+    else:
+        builds = bs
     for b in builds:
         if b[0] in housing and b[1] == 0:
             total_housing = total_housing + 1.0
@@ -94,11 +97,10 @@ def calculate_space(builds):
     return total_space
 
 
-def calculate_academics(builds):
+def calculate_academics(b):
     science_output = 0.0
-    for b in builds:
-        if b[0] == "Академия" and b[1] == 0:
-            science_output = science_output + 0.2
+    if b[0] == "Академия" and b[1] == 0:
+        science_output = 0.2
     return science_output
 
 
@@ -108,8 +110,13 @@ def calculate_academics(builds):
 "it is not done yet!!!!"
 
 
-def calculate_employment(builds):
-    em = 0.1
+def calculate_employment(bs):
+    em = 0.0
+    if not isinstance(bs[0], list):
+        builds = []
+        builds.append(bs)
+    else:
+        builds = bs
     for b in builds:
         if b[0] == "Академия" and b[1] == 0:
             em = em + 1.0
@@ -417,42 +424,10 @@ class Game(object):
                         (row2[1],),
                     )
                 ):
-                    """do note resources are stored in NEGATIVE numbers
-                    and converted to positive on the point of access
-                    idk why i have to do this it breaks otherwise (actually i now know why nvm)
-                    """
-                    builds = list(
-                        cur.execute(
-                            "select building, turns_remains, id from buildings where planet = ?",
-                            (row2[1],),
-                        )
-                    )
-
-                    academics = academics + calculate_academics(builds)
-                    """coefpop will later be calculated through other means"""
-                    coefpop = row3[5] / calculate_employment(builds)
-                    if coefpop > 1:
-                        coefpop = 1
-                    coefhouse = calculate_housing(builds) / row3[5]
-                    coeftotal = coefpop * 0.3 + coefhouse * 0.7
-                    bp = calculate_bp(row3[1], builds)
-                    vp = calculate_vp(row3[4], builds)
-                    rsnew = row3[2] + ((row3[0] - bp) * coeftotal)
-                    popnew = row3[5] * 1.01
-                    cur.execute(
-                        "UPDATE resources SET RS = ? WHERE planet = ?",
-                        (
-                            rsnew,
-                            row2[1],
-                        ),
-                    )
-                    cur.execute(
-                        "UPDATE resources SET pop = ? WHERE planet = ?",
-                        (
-                            popnew,
-                            row2[1],
-                        ),
-                    )
+                    employment = 0.0
+                    housing = 0.0
+                    bp_total = row3[1]
+                    vp_total = row3[4]
                     turn = list(
                         cur.execute(
                             "SELECT MAX(turn) FROM historical_planet where planet = ?",
@@ -476,27 +451,12 @@ class Game(object):
                             )
                         ],
                     )
-                    new_values = list(
+                    for row4 in list(
                         cur.execute(
-                            "SELECT creds, limit_pol FROM polities WHERE polity_id = ?",
-                            (row[0],),
+                            "select building, turns_remains, id from buildings where planet = ?",
+                            (row2[1],),
                         )
-                    )[0]
-                    cur.execute(
-                        "UPDATE polities SET creds = ? WHERE polity_id = ?",
-                        (
-                            (new_values[0] + (bp * coefpop)),
-                            row[0],
-                        ),
-                    )
-                    cur.execute(
-                        "UPDATE polities SET science = ? WHERE polity_id = ?",
-                        (
-                            (new_values[1] + (vp * coefpop)),
-                            row[0],
-                        ),
-                    )
-                    for row4 in builds:
+                    ):
                         turns = row4[1]
                         if turns > 0:
                             turns = turns - 1
@@ -506,9 +466,11 @@ class Game(object):
                                     (row[0],),
                                 )
                             )[0][0]
-                            cur.execute(
-                                "DELETE from polities WHERE polity_id = ?", (row[0],)
-                            )
+                            academics = academics + calculate_academics(row4)
+                            employment = employment + calculate_employment(row4)
+                            housing = housing + calculate_housing(row4)
+                            bp_total = calculate_bp(bp_total)
+                            vp_total = calculate_vp(vp_total)
                             cur.execute(
                                 "UPDATE polities SET creds = ? WHERE polity_id = ?",
                                 (
@@ -516,10 +478,6 @@ class Game(object):
                                     row[0],
                                 ),
                             )
-                        cur.executemany(
-                            "INSERT INTO buildings VALUES(?, ?, ?, ?)",
-                            [(row2[1], row4[0], turns, row4[2])],
-                        )
                         cur.execute(
                             "UPDATE buildings SET turns_remains = ? WHERE planet = ? and building = ? and id = ?",
                             (
@@ -529,6 +487,52 @@ class Game(object):
                                 row4[2],
                             ),
                         )
+                    """do note resources are stored in NEGATIVE numbers
+                    and converted to positive on the point of access
+                    idk why i have to do this it breaks otherwise (actually i now know why nvm)
+                    """
+                    """coefpop will later be calculated through other means"""
+                    coefpop = row3[5] / employment + 0.1
+                    if coefpop > 1:
+                        coefpop = 1
+                    coefhouse = housing / row3[5]
+                    coeftotal = coefpop * 0.3 + coefhouse * 0.7
+                    rsnew = row3[2] + ((row3[0] - bp_total) * coeftotal)
+                    popnew = row3[5] * 1.01
+                    cur.execute(
+                        "UPDATE resources SET RS = ? WHERE planet = ?",
+                        (
+                            rsnew,
+                            row2[1],
+                        ),
+                    )
+                    cur.execute(
+                        "UPDATE resources SET pop = ? WHERE planet = ?",
+                        (
+                            popnew,
+                            row2[1],
+                        ),
+                    )
+                    new_values = list(
+                        cur.execute(
+                            "SELECT creds, limit_pol FROM polities WHERE polity_id = ?",
+                            (row[0],),
+                        )
+                    )[0]
+                    cur.execute(
+                        "UPDATE polities SET creds = ? WHERE polity_id = ?",
+                        (
+                            (new_values[0] + (bp_total * coefpop)),
+                            row[0],
+                        ),
+                    )
+                    cur.execute(
+                        "UPDATE polities SET limit_pol = ? WHERE polity_id = ?",
+                        (
+                            (new_values[1] + (vp_total * coefpop)),
+                            row[0],
+                        ),
+                    )
                 station = list(
                     cur.execute(
                         "SELECT station, turns_remains from stations where system = ?",
