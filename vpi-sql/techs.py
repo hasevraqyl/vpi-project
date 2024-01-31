@@ -62,6 +62,8 @@ class Buildings(object):
         B("Зоны", 2.0, 0.0, 0.0, 2.0, 1000),
     }
 
+    """i need to rewrite this"""
+
     def buildingcheck(cls, name):
         for type in cls._buildingslist:
             if type.name == name:
