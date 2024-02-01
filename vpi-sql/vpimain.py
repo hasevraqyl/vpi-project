@@ -126,14 +126,13 @@ def calculate_employment(bs):
 "this function calculates the status of tech research"
 
 
-def calc_wearing(builds):
-    for b in builds:
-        if b[0] == "Кварталы I" and b[1] == 0:
-            if rand_percent(2):
-                cur.execute(
-                    "UPDATE buildings SET building = 'Трущобы' WHERE building = ? and id = ?",
-                    (b[0], b[2]),
-                )
+def calc_wearing(b):
+    if b[0] == "Кварталы I" and b[1] == 0:
+        if rand_percent(2):
+            cur.execute(
+                "UPDATE buildings SET building = 'Трущобы' WHERE building = ? and id = ?",
+                (b[0], b[2]),
+            )
     con.commit()
     return
 
@@ -472,6 +471,7 @@ class Game(object):
                             "the following might be deprecated"
                             bp_total = calculate_bp(bp_total)
                             vp_total = calculate_vp(vp_total)
+                            calc_wearing(row4)
                             cur.execute(
                                 "UPDATE polities SET creds = ? WHERE polity_id = ?",
                                 (
