@@ -469,6 +469,7 @@ class Game(object):
                             academics = academics + calculate_academics(row4)
                             employment = employment + calculate_employment(row4)
                             housing = housing + calculate_housing(row4)
+                            "the following might be deprecated"
                             bp_total = calculate_bp(bp_total)
                             vp_total = calculate_vp(vp_total)
                             cur.execute(
@@ -492,12 +493,12 @@ class Game(object):
                     idk why i have to do this it breaks otherwise (actually i now know why nvm)
                     """
                     """coefpop will later be calculated through other means"""
-                    coefpop = row3[5] / employment + 0.1
-                    if coefpop > 1:
-                        coefpop = 1
-                    coefhouse = housing / row3[5]
-                    coeftotal = coefpop * 0.3 + coefhouse * 0.7
-                    rsnew = row3[2] + ((row3[0] - bp_total) * coeftotal)
+                    cpop = row3[5] / employment + 0.1
+                    if cpop > 1:
+                        cpop = 1
+                    chouse = housing / row3[5]
+                    ctotal = cpop * 0.3 + chouse * 0.7
+                    rsnew = row3[2] + ((row3[0] - bp_total) * ctotal)
                     popnew = row3[5] * 1.01
                     cur.execute(
                         "UPDATE resources SET RS = ? WHERE planet = ?",
@@ -522,14 +523,14 @@ class Game(object):
                     cur.execute(
                         "UPDATE polities SET creds = ? WHERE polity_id = ?",
                         (
-                            (new_values[0] + (bp_total * coefpop)),
+                            (new_values[0] + (bp_total * cpop)),
                             row[0],
                         ),
                     )
                     cur.execute(
                         "UPDATE polities SET limit_pol = ? WHERE polity_id = ?",
                         (
-                            (new_values[1] + (vp_total * coefpop)),
+                            (new_values[1] + (vp_total * cpop)),
                             row[0],
                         ),
                     )
@@ -543,16 +544,12 @@ class Game(object):
                     turns2 = station[0][1]
                     if turns2 > 0:
                         turns2 = turns2 - 1
-                        cur.execute("DELETE from stations where system = ?", (row2[0],))
-                        cur.executemany(
-                            "INSERT INTO stations VALUES(?, ?, ?)",
-                            [
-                                (
-                                    row2[0],
-                                    station[0][0],
-                                    turns2,
-                                )
-                            ],
+                        cur.execute(
+                            "UPDATE stations SET turns_remains = ? WHERE system = ?",
+                            (
+                                turns2,
+                                row2[0],
+                            ),
                         )
             cur.execute(
                 "UPDATE polities SET science = ? WHERE polity_id = ?",
