@@ -77,6 +77,8 @@ def calculate_vp(vp_total, b):
 
 def calculate_housing(bs):
     total_housing = 0.0
+    if len(bs) == 0 or bs is None:
+        return total_housing
     housing = ["Кварталы I", "Кварталы II", "Кварталы III", "Трущобы"]
     if not isinstance(bs[0], list):
         builds = []
@@ -108,10 +110,13 @@ def calculate_academics(b):
 
 "actually i can finally begin working on this one properly"
 "it is not done yet!!!!"
+"still not done; reminder that return 0.1 is a temporary measure"
 
 
 def calculate_employment(bs):
     em = 0.0
+    if len(bs) == 0 or bs is None:
+        return 0.1
     if not isinstance(bs[0], list):
         builds = []
         builds.append(bs)
@@ -493,7 +498,7 @@ class Game(object):
                     idk why i have to do this it breaks otherwise (actually i now know why nvm)
                     """
                     """coefpop will later be calculated through other means"""
-                    cpop = row3[5] / employment + 0.1
+                    cpop = row3[5] / (employment + 0.1)
                     if cpop > 1:
                         cpop = 1
                     chouse = housing / row3[5]
@@ -551,6 +556,27 @@ class Game(object):
                                 row2[0],
                             ),
                         )
+                    for build in list(
+                        cur.execute(
+                            "SELECT building, turns_remains, id from station_builds WHERE system = ?",
+                            (row2[0],),
+                        )
+                    ):
+                        turns3 = build[1]
+                        if turns3 > 0:
+                            turns3 = turns3 - 1
+                            cur.execute(
+                                "UPDATE polities SET creds = ? WHERE polity_id = ?",
+                                (row[4] - Buildings.stationcostfetch(build[0]), row[0]),
+                            )
+                            cur.execute(
+                                "UPDATE station_builds SET turns_remains = ? WHERE system = ? AND id = ?",
+                                (
+                                    turns3,
+                                    row2[0],
+                                    build[2],
+                                ),
+                            )
             cur.execute(
                 "UPDATE polities SET science = ? WHERE polity_id = ?",
                 (
@@ -804,7 +830,7 @@ class Game(object):
     def build_Building(cls, pln, building):
         if not check_table():
             return DiscordStatusCode.no_table
-        flag, time = Buildings.buildingcheck(Buildings, building)
+        flag, time = Buildings.buildingcheck(building)
         if not flag:
             return DiscordStatusCode.invalid_elem
         planet = list(
@@ -824,7 +850,7 @@ class Game(object):
         for old_building in old_buildings:
             if old_building[0] == building:
                 n += 1
-            if n == Buildings.buildingfetch(Buildings, old_building[0]):
+            if n == Buildings.buildingfetch(old_building[0]):
                 return DiscordStatusCode.redundant_elem
         cur.executemany(
             "INSERT INTO buildings VALUES(?, ?, ?, ?)",
@@ -862,13 +888,13 @@ class Game(object):
         if not check_table():
             return DiscordStatusCode.no_table
         ssystem = list(
-            cur.execute("SELECT system from systems where system = ?", (sys,))
+            cur.execute("SELECT system FROM systems WHERE system = ?", (sys,))
         )
         if len(ssystem) == 0:
             return DiscordStatusCode.no_elem
         station = list(
             cur.execute(
-                "SELECT station, turns_remains from stations where system = ?", (sys,)
+                "SELECT station, turns_remains FROM stations WHERE system = ?", (sys,)
             )
         )
         if len(station) > 0:
@@ -885,6 +911,45 @@ class Game(object):
         )
         con.commit
         return DiscordStatusCode.all_clear
+
+    @classmethod
+    def improve_Station(cls, sys):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        ssystem = list(
+            cur.execute("SELECT system FROM systems WHERE system = ?", (sys,))
+        )
+        if len(ssystem) == 0:
+            return DiscordStatusCode.no_elem
+        station = list(
+            cur.execute(
+                "SELECT station, turns_remains FROM stations WHERE system = ?", (sys,)
+            )
+        )
+        if len(station) == 0 or station[1] != 0:
+            return DiscordStatusCode.no_elem
+        builds = list(
+            cur.execute(
+                "SELECT building, id from station_builds WHERE system = ?", (sys,)
+            )
+        )
+        time = 0
+        for b in builds:
+            check, time = Buildings.stationcheck(b[0])
+            if check:
+                cur.executemany(
+                    "INSERT into station_builds VALUES (?, ?, ?, ?)",
+                    [
+                        (
+                            sys,
+                            b[0],
+                            time,
+                            builds[0] + 1,
+                        )
+                    ],
+                )
+                return DiscordStatusCode.all_clear
+        return DiscordStatusCode.invalid_elem
 
     @classmethod
     def planet_demos(cls, pln):

@@ -49,6 +49,9 @@ class Buildings(object):
             self.buildtime = buildtime
             self.maxi = maxi
 
+    class Bs(B):
+        pass
+
     _buildingslist = {
         B("Основные промзоны", 2.0, 0.0, 0.0, 3, 1000),
         B("ВПК", 3.0, 0.0, 0.0, 5, 1000),
@@ -62,19 +65,36 @@ class Buildings(object):
         B("Зоны", 2.0, 0.0, 0.0, 2.0, 1000),
     }
 
+    _stationslist = {Bs("Верфь", 2.0, 0.0, 0.0, 3, 10)}
     """i need to rewrite this"""
 
+    @classmethod
+    def stationcheck(cls, name):
+        for type in cls._stationslist:
+            if type.name == name:
+                return True, type.buildtime
+        return False, None
+
+    @classmethod
+    def stationcostfetch(cls, name):
+        for type in cls._stationslist:
+            if type.name == name:
+                return type.cost
+
+    @classmethod
     def buildingcheck(cls, name):
         for type in cls._buildingslist:
             if type.name == name:
                 return True, type.buildtime
         return False, None
 
+    @classmethod
     def buildingfetch(cls, name):
         for type in cls._buildingslist:
             if type.name == name:
                 return type.maxi
 
+    @classmethod
     def costfetch(cls, name):
         for type in cls._buildingslist:
             if type.name == name:

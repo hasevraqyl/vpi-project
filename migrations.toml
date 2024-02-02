@@ -50,6 +50,12 @@ migration_prime = """
     station TEXT     NOT NULL,
     turns_remains INT  NOT NULL
     );
+    CREATE TABLE station_builds (
+    system TEXT       NOT NULL,
+    building TEXT     NOT NULL,
+    turns_remains INT NOT NULL,
+    id            INT NOT NULL
+    )
     CREATE TABLE agreements (
     polity_1 TEXT    NOT NULL,
     polity_2 TEXT    NOT NULL
