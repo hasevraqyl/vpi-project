@@ -79,14 +79,13 @@ def calculate_housing(bs):
     total_housing = 0.0
     if len(bs) == 0 or bs is None:
         return total_housing
-    housing = ["Кварталы I", "Кварталы II", "Кварталы III", "Трущобы"]
     if not isinstance(bs[0], list):
         builds = []
         builds.append(bs)
     else:
         builds = bs
     for b in builds:
-        if b[0] in housing and b[1] == 0:
+        if Buildings.bfetch(b[0]).h and b[1] == 0:
             total_housing = total_housing + 1.0
     return total_housing
 
@@ -123,7 +122,7 @@ def calculate_employment(bs):
     else:
         builds = bs
     for b in builds:
-        if b[0] == "Академия" and b[1] == 0:
+        if Buildings.bfetch(b[0]).e and b[1] == 0:
             em = em + 1.0
     return em
 
@@ -464,12 +463,12 @@ class Game(object):
                         turns = row4[1]
                         if turns > 0:
                             turns = turns - 1
-                            newval2 = list(
+                            vr = list(
                                 cur.execute(
-                                    "SELECT creds FROM polities WHERE polity_id = ?",
+                                    "SELECT creds, limit_pol FROM polities WHERE polity_id = ?",
                                     (row[0],),
                                 )
-                            )[0][0]
+                            )[0]
                             academics = academics + calculate_academics(row4)
                             employment = employment + calculate_employment(row4)
                             housing = housing + calculate_housing(row4)
@@ -477,10 +476,12 @@ class Game(object):
                             bp_total = calculate_bp(bp_total)
                             vp_total = calculate_vp(vp_total)
                             calc_wearing(row4)
+                            bi = Buildings.bfetch(row4[0])
                             cur.execute(
-                                "UPDATE polities SET creds = ? WHERE polity_id = ?",
+                                "UPDATE polities SET creds = ?, limit_pol = ? WHERE polity_id = ?",
                                 (
-                                    newval2 - Buildings.costfetch(Buildings, row4[0]),
+                                    vr[0] - bi.cost,
+                                    vr[1] - bi.lim,
                                     row[0],
                                 ),
                             )
@@ -565,9 +566,10 @@ class Game(object):
                         turns3 = build[1]
                         if turns3 > 0:
                             turns3 = turns3 - 1
+                            b = Buildings.bfetch(build[0])
                             cur.execute(
-                                "UPDATE polities SET creds = ? WHERE polity_id = ?",
-                                (row[4] - Buildings.stationcostfetch(build[0]), row[0]),
+                                "UPDATE polities SET creds = ?, limit_pol = ? WHERE polity_id = ?",
+                                (row[3] - b.cost, row[5] - b.lim, row[0]),
                             )
                             cur.execute(
                                 "UPDATE station_builds SET turns_remains = ? WHERE system = ? AND id = ?",
@@ -830,8 +832,8 @@ class Game(object):
     def build_Building(cls, pln, building):
         if not check_table():
             return DiscordStatusCode.no_table
-        flag, time = Buildings.buildingcheck(building)
-        if not flag:
+        time = Buildings.bfetch(building).buildtime
+        if time is not None:
             return DiscordStatusCode.invalid_elem
         planet = list(
             cur.execute("SELECT planet, hosp from systems where planet = ?", (pln,))
@@ -933,17 +935,16 @@ class Game(object):
                 "SELECT building, id from station_builds WHERE system = ?", (sys,)
             )
         )
-        time = 0
         for b in builds:
-            check, time = Buildings.stationcheck(b[0])
-            if check:
+            stb = Buildings.bfetch(b[0])
+            if stb is not None:
                 cur.executemany(
                     "INSERT into station_builds VALUES (?, ?, ?, ?)",
                     [
                         (
                             sys,
                             b[0],
-                            time,
+                            stb.buildtime,
                             builds[0] + 1,
                         )
                     ],
@@ -1074,8 +1075,8 @@ class Game(object):
         )
         if len(polity) == 0:
             return None, DiscordStatusCode.no_elem
-        cat_tech, cost_tech, num_tech = Techs.fetch_tech(Techs, tech)
-        if cat_tech is None:
+        t = Techs.tfetch(tech)
+        if t.category is None:
             return None, DiscordStatusCode.invalid_elem
         techs = list(
             cur.execute(
@@ -1085,14 +1086,14 @@ class Game(object):
         )
         tech_flag = False
         cur_tech = ()
-        if num_tech == 1:
+        if t.number == 1:
             tech_flag = True
         currently_researched = ""
         for tech in techs:
             if tech[0] == tech and (tech[2] == 1 or tech[1] == 0.0):
                 return None, DiscordStatusCode.redundant_elem
-            cat_oldtech, _, num_oldtech = Techs.fetch_tech(tech[0])
-            if cat_oldtech == cat_tech and num_oldtech == num_tech - 1:
+            ot = Techs.tfetch(tech[0])
+            if ot.category == t.category and ot.number == t.number - 1:
                 tech_flag = True
             if tech[2] == 1:
                 cur_tech = tech
@@ -1124,8 +1125,8 @@ class Game(object):
                     (
                         polity[0][0],
                         tech,
-                        cost_tech,
-                        num_tech,
+                        t.cost,
+                        t.number,
                     )
                 ],
             )
