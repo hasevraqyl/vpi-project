@@ -86,7 +86,7 @@ def calculate_housing(bs):
         builds = bs
     for b in builds:
         if Buildings.bfetch(b[0]).h and b[1] == 0:
-            total_housing = total_housing + 1.0
+            total_housing += 1.0
     return total_housing
 
 
@@ -94,7 +94,7 @@ def calculate_space(builds):
     total_space = 0.0
     for b in builds:
         if b[0] == "Зоны" and b[1] == 0:
-            total_space = total_space + 1.0
+            total_space += 1.0
     return total_space
 
 
@@ -123,7 +123,7 @@ def calculate_employment(bs):
         builds = bs
     for b in builds:
         if Buildings.bfetch(b[0]).e and b[1] == 0:
-            em = em + 1.0
+            em += 1.0
     return em
 
 
@@ -350,7 +350,7 @@ def calc_transfer():
                 "DELETE FROM population_transfers where planetfrom = ?", (e[0],)
             )
         else:
-            frompop = frompop - 1
+            frompop = -1
             transfer = 1
         topop = list(
             cur.execute("SELECT pop from resources WHERE planet = ?", (e[1],))
@@ -509,7 +509,7 @@ class Game(object):
                     ):
                         turns = row4[1]
                         if turns > 0:
-                            turns = turns - 1
+                            turns = -1
                             vr = list(
                                 cur.execute(
                                     "SELECT creds, limit_pol FROM polities WHERE polity_id = ?",
@@ -597,7 +597,7 @@ class Game(object):
                 if len(station) > 0:
                     turns2 = station[0][1]
                     if turns2 > 0:
-                        turns2 = turns2 - 1
+                        turns2 = -1
                         cur.execute(
                             "UPDATE stations SET turns_remains = ? WHERE system = ?",
                             (
@@ -613,7 +613,7 @@ class Game(object):
                     ):
                         turns3 = build[1]
                         if turns3 > 0:
-                            turns3 = turns3 - 1
+                            turns3 = -1
                             b = Buildings.bfetch(build[0])
                             cur.execute(
                                 "UPDATE polities SET creds = ?, limit_pol = ? WHERE polity_id = ?",
@@ -1066,8 +1066,8 @@ class Game(object):
         )
         if len(info) == 0:
             return None, None, None, DiscordStatusCode.invalid_elem
-        bf = -100000.0
-        stl = -100000.0
+        bf = -1000000000.0
+        stl = -1000000000.0
         for i in range(len(info)):
             if i == (len(info) - 5) and len(info) > 5:
                 bf = info[i][2]
