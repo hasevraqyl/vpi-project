@@ -43,7 +43,8 @@ migration_prime = """
     planet TEXT       NOT NULL,
     building TEXT     NOT NULL,
     turns_remains INT NOT NULL,
-    id            INT NOT NULL
+    id            INT NOT NULL,
+    data TEXT         NOT NULL
     );
     CREATE TABLE stations (
     system TEXT       NOT NULL,

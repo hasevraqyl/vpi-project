@@ -130,15 +130,62 @@ def calculate_employment(bs):
 "this function calculates the status of tech research"
 
 
-def calc_wearing(b):
+def calc_wearing(b, pln):
     if b[0] == "Кварталы I" and b[1] == 0:
         if rand_percent(2):
             cur.execute(
-                "UPDATE buildings SET building = 'Трущобы' WHERE building = ? and id = ?",
-                (b[0], b[2]),
+                "UPDATE buildings SET building = 'Аварийные кварталы' WHERE building = ? and id = ? and planet = ?",
+                (
+                    b[0],
+                    b[2],
+                    pln,
+                ),
             )
     con.commit()
     return
+
+
+def calc_munic(pln):
+    mun = list(
+        cur.execute(
+            "SELECT id, data FROM buildings WHERE planet = ? AND building = 'Муниципалка' AND turns_remains = 0",
+            (pln,),
+        )
+    )
+    av = list(
+        cur.execute(
+            "SELECT id FROM buildings WHERE planet = ? AND building = 'Аварийные кварталы'",
+            (pln,),
+        )
+    )
+    t = len(av)
+    n = 0
+    for m in mun:
+        if m[1] == "in_use":
+            cur.execute(
+                "UPDATE buildings SET data = '' WHERE planet = ? and building = 'Муниципалка' AND id = ?",
+                (
+                    pln,
+                    m[0],
+                ),
+            )
+        elif m[1] == "":
+            if n < t:
+                cur.execute(
+                    "UPDATE buildings SET data = '' WHERE planet = ? and building = 'Муниципалка' and id = ?",
+                    (
+                        pln,
+                        m[0],
+                    ),
+                )
+                cur.execute(
+                    "UPDATE buildings SET building = 'Кварталы I' WHERE planet = ? and building = 'Аварийные кварталы' and id = ?",
+                    (
+                        pln,
+                        av[n][0],
+                    ),
+                )
+                n += 1
 
 
 def calc_tech(pol):
@@ -456,7 +503,7 @@ class Game(object):
                     )
                     for row4 in list(
                         cur.execute(
-                            "select building, turns_remains, id from buildings where planet = ?",
+                            "select building, turns_remains, id, data from buildings where planet = ?",
                             (row2[1],),
                         )
                     ):
@@ -499,6 +546,7 @@ class Game(object):
                     idk why i have to do this it breaks otherwise (actually i now know why nvm)
                     """
                     """coefpop will later be calculated through other means"""
+                    calc_munic(row4)
                     cpop = row3[5] / (employment + 0.1)
                     if cpop > 1:
                         cpop = 1
@@ -832,7 +880,8 @@ class Game(object):
     def build_Building(cls, pln, building):
         if not check_table():
             return DiscordStatusCode.no_table
-        time = Buildings.bfetch(building).buildtime
+        b = Buildings.bfetch(building)
+        time = b.buildtime
         if time is not None:
             return DiscordStatusCode.invalid_elem
         planet = list(
@@ -843,7 +892,7 @@ class Game(object):
         old_buildings = list(
             cur.execute("SELECT building from buildings where planet = ?", (pln,))
         )
-        if building in ["Кварталы I", "Квартал II", "Квартал III", "Трущобы"]:
+        if b.h:
             if (
                 calculate_housing(old_buildings) + 1 > calculate_space(old_buildings)
             ) and planet[0][1] == 0:
@@ -852,16 +901,17 @@ class Game(object):
         for old_building in old_buildings:
             if old_building[0] == building:
                 n += 1
-            if n == Buildings.buildingfetch(old_building[0]):
+            if n == Buildings.bfetch(old_building[0]).maxi:
                 return DiscordStatusCode.redundant_elem
         cur.executemany(
-            "INSERT INTO buildings VALUES(?, ?, ?, ?)",
+            "INSERT INTO buildings VALUES(?, ?, ?, ?, ?)",
             [
                 (
                     pln,
                     building,
                     time,
                     (n + 1),
+                    "",
                 )
             ],
         )
