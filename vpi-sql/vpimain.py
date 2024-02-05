@@ -983,7 +983,7 @@ class Game(object):
                 "SELECT station, turns_remains FROM stations WHERE system = ?", (sys,)
             )
         )
-        if len(station) == 0 or station[1] != 0:
+        if len(station) == 0:
             return DiscordStatusCode.no_elem
         if station[1] != 0:
             return DiscordStatusCode.no_elem
