@@ -326,8 +326,28 @@ async def system_build(interaction: discord.Interaction, first_value: str):
                 m.set_string(
                     f"Пoстройка станции в системе {first_value} успешно начата."
                 )
-    else:
-        await interaction.response.send_message(m.get_string())
+    await interaction.response.send_message(m.get_string())
+
+
+@client.tree.command()
+@app_commands.describe(first_value="название системы", second_value="название здания")
+async def station_build(
+    interaction: discord.Interaction, first_value: str, second_value: str
+):
+    m = Message(interaction)
+    if m.auth():
+        """Начинаем строительство на планете."""
+        status = Game.improve_Station(first_value, second_value)
+        if m.fill_string(status, "системы"):
+            if status.name == "invalid_elem":
+                m.set_string("Такого здания не бывает.")
+            elif status.name == "redundant_elem":
+                m.set_string("Достигнут лимит зданий данного типа.")
+            else:
+                m.set_string(
+                    f"Постройка здания {second_value} успешно начата на планете {first_value}."
+                )
+    await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()

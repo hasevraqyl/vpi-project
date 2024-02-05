@@ -56,7 +56,7 @@ migration_prime = """
     building TEXT     NOT NULL,
     turns_remains INT NOT NULL,
     id            INT NOT NULL
-    )
+    );
     CREATE TABLE agreements (
     polity_1 TEXT    NOT NULL,
     polity_2 TEXT    NOT NULL
@@ -150,4 +150,5 @@ rollback = """
     DROP TABLE IF EXISTS fleets;
     DROP TABLE IF EXISTS spaceships;
     DROP TABLE IF EXISTS modules;
+    DROP TABLE IF EXISTS station_builds;
 """

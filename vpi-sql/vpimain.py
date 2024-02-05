@@ -63,13 +63,13 @@ def check_table():
 "possibly deprecated, possibly will be brought in later, donotdelete"
 
 
-def calculate_bp(bp_total, b):
+def calculate_bp(b, bp_total):
     if b[0] == "Основные промзоны" and b[1] == 0:
         bp_total = bp_total + 3.0
     return bp_total
 
 
-def calculate_vp(vp_total, b):
+def calculate_vp(b, vp_total):
     if b[0] == "ВПК" and b[1] == 0:
         vp_total = vp_total + 3.0
     return vp_total
@@ -79,7 +79,7 @@ def calculate_housing(bs):
     total_housing = 0.0
     if len(bs) == 0 or bs is None:
         return total_housing
-    if not isinstance(bs[0], list):
+    if not isinstance(bs[0], tuple):
         builds = []
         builds.append(bs)
     else:
@@ -116,7 +116,7 @@ def calculate_employment(bs):
     em = 0.0
     if len(bs) == 0 or bs is None:
         return 0.1
-    if not isinstance(bs[0], list):
+    if not isinstance(bs[0], tuple):
         builds = []
         builds.append(bs)
     else:
@@ -186,6 +186,8 @@ def calc_munic(pln):
                     ),
                 )
                 n += 1
+    con.commit()
+    return
 
 
 def calc_tech(pol):
@@ -509,7 +511,7 @@ class Game(object):
                     ):
                         turns = row4[1]
                         if turns > 0:
-                            turns = -1
+                            turns = turns - 1
                             vr = list(
                                 cur.execute(
                                     "SELECT creds, limit_pol FROM polities WHERE polity_id = ?",
@@ -520,9 +522,9 @@ class Game(object):
                             employment = employment + calculate_employment(row4)
                             housing = housing + calculate_housing(row4)
                             "the following might be deprecated"
-                            bp_total = calculate_bp(bp_total)
-                            vp_total = calculate_vp(vp_total)
-                            calc_wearing(row4)
+                            bp_total = calculate_bp(row4, bp_total)
+                            vp_total = calculate_vp(row4, vp_total)
+                            calc_wearing(row2[1], row4)
                             bi = Buildings.bfetch(row4[0])
                             cur.execute(
                                 "UPDATE polities SET creds = ?, limit_pol = ? WHERE polity_id = ?",
@@ -546,7 +548,7 @@ class Game(object):
                     idk why i have to do this it breaks otherwise (actually i now know why nvm)
                     """
                     """coefpop will later be calculated through other means"""
-                    calc_munic(row4)
+                    calc_munic(row2[1])
                     cpop = row3[5] / (employment + 0.1)
                     if cpop > 1:
                         cpop = 1
@@ -882,20 +884,23 @@ class Game(object):
             return DiscordStatusCode.no_table
         b = Buildings.bfetch(building)
         time = b.buildtime
-        if time is not None:
+        if b is None:
             return DiscordStatusCode.invalid_elem
         planet = list(
             cur.execute("SELECT planet, hosp from systems where planet = ?", (pln,))
-        )
+        )[0]
         if len(planet) == 0:
             return DiscordStatusCode.no_elem
         old_buildings = list(
-            cur.execute("SELECT building from buildings where planet = ?", (pln,))
+            cur.execute(
+                "SELECT building, turns_remains, id from buildings where planet = ?",
+                (pln,),
+            )
         )
         if b.h:
             if (
                 calculate_housing(old_buildings) + 1 > calculate_space(old_buildings)
-            ) and planet[0][1] == 0:
+            ) and planet[1] == 0:
                 return DiscordStatusCode.redundant_elem
         n = 0
         for old_building in old_buildings:
@@ -965,7 +970,7 @@ class Game(object):
         return DiscordStatusCode.all_clear
 
     @classmethod
-    def improve_Station(cls, sys):
+    def improve_Station(cls, sys, building):
         if not check_table():
             return DiscordStatusCode.no_table
         ssystem = list(
@@ -980,27 +985,33 @@ class Game(object):
         )
         if len(station) == 0 or station[1] != 0:
             return DiscordStatusCode.no_elem
-        builds = list(
+        old_buildings = list(
             cur.execute(
-                "SELECT building, id from station_builds WHERE system = ?", (sys,)
+                "SELECT building, turns_remains, id from station_builds where system = ? AND building = ?",
+                (
+                    sys,
+                    building,
+                ),
             )
         )
-        for b in builds:
-            stb = Buildings.bfetch(b[0])
-            if stb is not None:
-                cur.executemany(
-                    "INSERT into station_builds VALUES (?, ?, ?, ?)",
-                    [
-                        (
-                            sys,
-                            b[0],
-                            stb.buildtime,
-                            builds[0] + 1,
-                        )
-                    ],
+        b = Buildings.bfetch(building)
+        n = len(old_buildings)
+        if n >= b.maxi:
+            return DiscordStatusCode.redundant_elem
+        cur.executemany(
+            "INSERT INTO station_builds VALUES(?, ?, ?, ?, ?)",
+            [
+                (
+                    sys,
+                    building,
+                    b.buildtime,
+                    (n + 1),
+                    "",
                 )
-                return DiscordStatusCode.all_clear
-        return DiscordStatusCode.invalid_elem
+            ],
+        )
+        con.commit()
+        return DiscordStatusCode.all_clear
 
     @classmethod
     def planet_demos(cls, pln):
