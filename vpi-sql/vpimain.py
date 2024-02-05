@@ -684,9 +684,9 @@ class Game(object):
             )
         )
         if len(sl) > 0 and sl[0][1] > 0:
-            sst = f"В системе есть строящаяся станция, до завершения {sl[0][1]} ходов."
+            sst = sl[0][1]
         elif len(sl) > 0 and sl[0][1] == 0:
-            sst = "В системе есть станция."
+            sst = 0
         planet_string = comma_stringer(planet_list)
         polity = list(
             cur.execute(

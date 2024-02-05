@@ -114,8 +114,14 @@ async def system(interaction: discord.Interaction, first_value: str):
     if message.auth():
         polity, planets, st, status = Game.fetch_System(first_value)
         if message.fill_string(status, "системы"):
+            if st is None:
+                sst = ""
+            elif st == 0:
+                sst = "В системе есть станция."
+            else:
+                sst = f"В системе есть строящаяся станция. До завершения {st} ходов."
             message.set_string(
-                f"Система {first_value} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets} {st}"
+                f"Система {first_value} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets} {sst}"
             )
     await interaction.response.send_message(message.get_string())
 
