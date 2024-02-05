@@ -884,7 +884,7 @@ class Game(object):
             return DiscordStatusCode.no_table
         b = Buildings.bfetch(building)
         time = b.buildtime
-        if b is None:
+        if b is None or b.b:
             return DiscordStatusCode.invalid_elem
         planet = list(
             cur.execute("SELECT planet, hosp from systems where planet = ?", (pln,))

@@ -40,7 +40,7 @@ class Buildings(object):
     """we will possibly be deprecating the limit"""
 
     class B(object):
-        def __init__(self, name, cost, res, lim, buildtime, maxi, p, e, h):
+        def __init__(self, name, cost, res, lim, buildtime, maxi, p, e, h, b):
             self.name = name
             self.cost = cost
             self.res = res
@@ -50,24 +50,36 @@ class Buildings(object):
             self.p = p
             self.e = e
             self.h = h
+            self.b = b
 
     _buildingslist = {
         "Основные промзоны": B(
-            "Основные промзоны", 2.0, 0.0, 0.0, 3, 1000, False, False, False
+            "Основные промзоны", 2.0, 0.0, 0.0, 3, 1000, False, False, False, False
         ),
-        "ВПК": B("ВПК", 3.0, 0.0, 0.0, 5, 1000, False, False, False),
+        "ВПК": B("ВПК", 3.0, 0.0, 0.0, 5, 1000, False, False, False, False),
         "Гражданский сектор": B(
-            "Гражданский сектор", 2.0, 0.0, 0.0, 2, 1000, False, False, False
+            "Гражданский сектор", 2.0, 0.0, 0.0, 2, 1000, False, False, False, False
         ),
-        "Технопарк": B("Технопарк", 5.0, 0.0, 0.0, 10, 1000, False, True, False),
-        "Академия": B("Академия", 3.0, 0.0, 0.0, 3, 1000, False, True, False),
-        "Кварталы I": B("Кварталы I", 2.0, 0.0, 0.0, 1, 1000, False, False, True),
-        "Кварталы II": B("Кварталы II", 2.0, 0.0, 0.0, 2, 1000, False, False, True),
-        "Кварталы III": B("Кварталы III", 2.0, 0.0, 0.0, 4, 1000, False, False, True),
-        "Трущобы": B("Трущобы", 0.0, 0.0, 0.0, 1, 1000, False, False, True),
-        "Зоны": B("Зоны", 2.0, 0.0, 0.0, 2, 1000, False, False, False),
-        "Муниципалка": B("Муниципалка", 3.0, 0.0, 0.0, 1, 1000, False, True, False),
-        "Верфь": B("Верфь", 5.0, 0.0, 0.0, 7, 10, True, False, False),
+        "Технопарк": B("Технопарк", 5.0, 0.0, 0.0, 10, 1000, False, True, False, False),
+        "Академия": B("Академия", 3.0, 0.0, 0.0, 3, 1000, False, True, False, False),
+        "Кварталы I": B(
+            "Кварталы I", 2.0, 0.0, 0.0, 1, 1000, False, False, True, False
+        ),
+        "Кварталы II": B(
+            "Кварталы II", 2.0, 0.0, 0.0, 2, 1000, False, False, True, False
+        ),
+        "Кварталы III": B(
+            "Кварталы III", 2.0, 0.0, 0.0, 4, 1000, False, False, True, False
+        ),
+        "Трущобы": B("Трущобы", 0.0, 0.0, 0.0, 1, 1000, False, False, True, False),
+        "Зоны": B("Зоны", 2.0, 0.0, 0.0, 2, 1000, False, False, False, False),
+        "Муниципалка": B(
+            "Муниципалка", 3.0, 0.0, 0.0, 1, 1000, False, True, False, False
+        ),
+        "Верфь": B("Верфь", 5.0, 0.0, 0.0, 7, 10, True, False, False, False),
+        "Аварийные кварталы": B(
+            "Аварийные кварталы", 0.0, 0.0, 0.0, 0, 0, False, False, True, True
+        ),
     }
 
     """
