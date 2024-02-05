@@ -63,11 +63,14 @@ async def on_ready():
 @client.tree.command()
 async def turn(interaction: discord.Interaction):
     """Совершает ход"""
-    status = Game.turn()
-    if status.name == "no_table":
-        await interaction.response.send_message("Ошибка. Перезапустите игру.")
-    else:
-        await interaction.response.send_message("Ход сделан.")
+    m = Message(interaction)
+    if m.auth():
+        status = Game.turn()
+        if status.name == "no_table":
+            m.set_string("Ошибка. Перезапустите игру.")
+        else:
+            m.set_string("Ход сделан.")
+    await interaction.response.send_message(m.get_string())
 
 
 """@client.tree.command()
@@ -78,12 +81,12 @@ async def смерть(interaction: discord.Interaction):
 
 @client.tree.command()
 async def restart(interaction: discord.Interaction):
-    string = "Ты тварь дрожащая и права не имеешь."
-    if interaction.user.id in info.get("auth_users"):
+    m = Message(interaction)
+    if m.auth():
         """Перезапускает игру. ВНИМАНИЕ! ВЫ ТОЧНО УВЕРЕНЫ?"""
         Game.rollback()
-        string = "Игра перезапущена и откачена к начальному состоянию."
-    await interaction.response.send_message(string)
+        m.set_string("Игра перезапущена и откачена к начальному состоянию.")
+    await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
@@ -344,14 +347,14 @@ async def station_build(
     if m.auth():
         """Начинаем строительство на планете."""
         status = Game.improve_Station(first_value, second_value)
-        if m.fill_string(status, "системы"):
+        if m.fill_string(status, "системы либо станции в системе"):
             if status.name == "invalid_elem":
                 m.set_string("Такого здания не бывает.")
             elif status.name == "redundant_elem":
                 m.set_string("Достигнут лимит зданий данного типа.")
             else:
                 m.set_string(
-                    f"Постройка здания {second_value} успешно начата на планете {first_value}."
+                    f"Постройка здания {second_value} успешно начата на станции в системе {first_value}."
                 )
     await interaction.response.send_message(m.get_string())
 

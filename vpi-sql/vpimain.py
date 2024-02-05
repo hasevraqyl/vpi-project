@@ -985,6 +985,8 @@ class Game(object):
         )
         if len(station) == 0 or station[1] != 0:
             return DiscordStatusCode.no_elem
+        if station[1] != 0:
+            return DiscordStatusCode.no_elem
         old_buildings = list(
             cur.execute(
                 "SELECT building, turns_remains, id from station_builds where system = ? AND building = ?",
