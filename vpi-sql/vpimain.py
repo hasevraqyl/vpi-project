@@ -615,7 +615,7 @@ class Game(object):
                     ):
                         turns3 = build[1]
                         if turns3 > 0:
-                            turns3 = -1
+                            turns3 = turns3 - 1
                             b = Buildings.bfetch(build[0])
                             cur.execute(
                                 "UPDATE polities SET creds = ?, limit_pol = ? WHERE polity_id = ?",
@@ -677,7 +677,7 @@ class Game(object):
         planet_list = list(
             cur.execute("SELECT planet FROM systems where system = ?", (sys,))
         )
-        sst = ""
+        sst = 0
         sl = list(
             cur.execute(
                 "SELECT station, turns_remains from stations where system = ?", (sys,)
