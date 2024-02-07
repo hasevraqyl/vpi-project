@@ -32,7 +32,7 @@ class Techs(object):
     }
 
     @classmethod
-    def tfetch(cls, name):
+    def fetch(cls, name):
         return cls._techslist.get(name)
 
 
@@ -98,7 +98,7 @@ class Buildings(object):
     """
 
     @classmethod
-    def bfetch(cls, name):
+    def fetch(cls, name):
         return cls._buildingslist.get(name)
 
 

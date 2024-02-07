@@ -85,7 +85,7 @@ def calculate_housing(bs):
     else:
         builds = bs
     for b in builds:
-        if Buildings.bfetch(b[0]).h and b[1] == 0:
+        if Buildings.fetch(b[0]).h and b[1] == 0:
             total_housing += 1.0
     return total_housing
 
@@ -122,7 +122,7 @@ def calculate_employment(bs):
     else:
         builds = bs
     for b in builds:
-        if Buildings.bfetch(b[0]).e and b[1] == 0:
+        if Buildings.fetch(b[0]).e and b[1] == 0:
             em += 1.0
     return em
 
@@ -525,7 +525,7 @@ class Game(object):
                             bp_total = calculate_bp(row4, bp_total)
                             vp_total = calculate_vp(row4, vp_total)
                             calc_wearing(row2[1], row4)
-                            bi = Buildings.bfetch(row4[0])
+                            bi = Buildings.fetch(row4[0])
                             cur.execute(
                                 "UPDATE polities SET creds = ?, limit_pol = ? WHERE polity_id = ?",
                                 (
@@ -616,7 +616,7 @@ class Game(object):
                         turns3 = build[1]
                         if turns3 > 0:
                             turns3 = turns3 - 1
-                            b = Buildings.bfetch(build[0])
+                            b = Buildings.fetch(build[0])
                             cur.execute(
                                 "UPDATE polities SET creds = ?, limit_pol = ? WHERE polity_id = ?",
                                 (row[3] - b.cost, row[5] - b.lim, row[0]),
@@ -882,7 +882,7 @@ class Game(object):
     def build_Building(cls, pln, building):
         if not check_table():
             return DiscordStatusCode.no_table
-        b = Buildings.bfetch(building)
+        b = Buildings.fetch(building)
         time = b.buildtime
         if b is None or b.b:
             return DiscordStatusCode.invalid_elem
@@ -906,7 +906,7 @@ class Game(object):
         for old_building in old_buildings:
             if old_building[0] == building:
                 n += 1
-            if n == Buildings.bfetch(old_building[0]).maxi:
+            if n == Buildings.fetch(old_building[0]).maxi:
                 return DiscordStatusCode.redundant_elem
         cur.executemany(
             "INSERT INTO buildings VALUES(?, ?, ?, ?, ?)",
@@ -996,7 +996,7 @@ class Game(object):
                 ),
             )
         )
-        b = Buildings.bfetch(building)
+        b = Buildings.fetch(building)
         n = len(old_buildings)
         if n >= b.maxi:
             return DiscordStatusCode.redundant_elem
@@ -1138,7 +1138,7 @@ class Game(object):
         )
         if len(polity) == 0:
             return None, DiscordStatusCode.no_elem
-        t = Techs.tfetch(tech)
+        t = Techs.fetch(tech)
         if t.category is None:
             return None, DiscordStatusCode.invalid_elem
         techs = list(
@@ -1155,7 +1155,7 @@ class Game(object):
         for tech in techs:
             if tech[0] == tech and (tech[2] == 1 or tech[1] == 0.0):
                 return None, DiscordStatusCode.redundant_elem
-            ot = Techs.tfetch(tech[0])
+            ot = Techs.fetch(tech[0])
             if ot.category == t.category and ot.number == t.number - 1:
                 tech_flag = True
             if tech[2] == 1:
