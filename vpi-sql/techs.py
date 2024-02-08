@@ -1,4 +1,10 @@
-class Techs(object):
+class Base(object):
+    @classmethod
+    def fetch(cls, name):
+        return cls._list.get(name)
+
+
+class Techs(Base):
     class T(object):
         def __init__(self, name, category, cost, number):
             self.name = name
@@ -6,7 +12,7 @@ class Techs(object):
             self.cost = cost
             self.number = number
 
-    _techslist = {
+    _list = {
         "Теория гиперсферы": T("Теория гиперсферы", "phys", 100.0, 1),
         "Варп-двигатель": T("Варп-двигатель", "phys", 100.0, 2),
         "Квантовый уловитель": T("Квантовый уловитель", "phys", 200.0, 3),
@@ -31,12 +37,8 @@ class Techs(object):
         "Сингулярность": T("Сингулярность", "cyb", 1100.0, 6),
     }
 
-    @classmethod
-    def fetch(cls, name):
-        return cls._techslist.get(name)
 
-
-class Buildings(object):
+class Buildings(Base):
     """we will possibly be deprecating the limit"""
 
     class B(object):
@@ -52,7 +54,7 @@ class Buildings(object):
             self.h = h
             self.b = b
 
-    _buildingslist = {
+    _list = {
         "Основные промзоны": B(
             "Основные промзоны", 2.0, 0.0, 0.0, 3, 1000, False, False, False, False
         ),
@@ -97,10 +99,6 @@ class Buildings(object):
                 return type.cost
     """
 
-    @classmethod
-    def fetch(cls, name):
-        return cls._buildingslist.get(name)
-
 
 """
     @classmethod
@@ -115,3 +113,16 @@ class Buildings(object):
             if type.name == name:
                 return type.cost
                 """
+
+
+class Modules(Base):
+    class M(object):
+        def __init__(self, name, cost, sil, prt, dmg, dmg_type):
+            self.name = name
+            self.cost = cost
+            self.sil = sil
+            self.prt = prt
+            self.dmg = dmg
+            self.dmg_type = dmg_type
+
+    _list = {}
