@@ -2,6 +2,7 @@ import sqlite3
 from enum_implement import DiscordStatusCode
 from techs import Buildings
 from techs import Techs
+from techs import Modules
 import numpy as np
 import random
 import tomllib
@@ -1197,6 +1198,68 @@ class Game(object):
             return currently_researched, DiscordStatusCode.all_clear
         else:
             return None, DiscordStatusCode.invalid_elem
+
+    def build_ship(cls, sys):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        sya = len(
+            list(
+                cur.execute(
+                    "SELECT id FROM station_builds WHERE building = 'Верфь' and system = ? and turns_remains = 0"
+                ),
+                (sys,),
+            )
+        )
+        if sya == 0:
+            return DiscordStatusCode.no_elem
+        id = (
+            list(cur.execute((cur.execute("SELECT MAX(id) FROM spaceships"))))[0][0] + 1
+        )
+        cur.executemany(
+            "INSERT INTO spaceships VALUES(?, ?, ?, ?)",
+            [
+                (
+                    0,
+                    id,
+                    0,
+                    sys,
+                )
+            ],
+        )
+        con.commit()
+        return DiscordStatusCode.all_clear
+
+    def build_module(cls, name, sys):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        ship = list(
+            cur.execute(
+                "SELECT ship_id, limit_ship FROM spaceships WHERE shipyard = ?", (sys,)
+            )
+        )[0]
+        if len(ship) == 0:
+            return DiscordStatusCode.no_elem
+        mod = Modules.fetch(name)
+        if mod is None:
+            return DiscordStatusCode.invalid_elem
+        nl = ship[1] + mod.cost
+        if nl > 1000:
+            return DiscordStatusCode.redundant_elem
+        cur.execute(
+            "UPDATE spaceships SET limit_ship = nl WHERE ship_id = ?", (ship[0],)
+        )
+        cur.executemany(
+            "INSERT INTO modules VALUES(?, ?, ?)",
+            [
+                (
+                    ship[0],
+                    name,
+                    mod.buildtime,
+                )
+            ],
+        )
+        con.commit()
+        return DiscordStatusCode.all_clear
 
     "this function creates a common demographic space from two empires"
 

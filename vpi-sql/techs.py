@@ -117,12 +117,14 @@ class Buildings(Base):
 
 class Modules(Base):
     class M(object):
-        def __init__(self, name, cost, sil, prt, dmg, dmg_type):
+        def __init__(self, name, cost, lim, sil, prot, dmg, dmg_type, buildtime, sn):
             self.name = name
             self.cost = cost
-            self.sil = sil
-            self.prt = prt
+            self.op_lim = lim
+            self.op_sil = sil
+            self.prt = prot
             self.dmg = dmg
-            self.dmg_type = dmg_type
+            self.buildtime = buildtime
+            self.sn = sn
 
-    _list = {}
+    _list = {"Ракеты": M("Ракеты", 20.0, 5.0, 0.0, 0.0, 0.0, 10.0, 3, False)}

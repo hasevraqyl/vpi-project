@@ -127,12 +127,13 @@ migration_prime = """
     CREATE TABLE spaceships(
         fleet INT NOT NULL,
         ship_id INT NOT NULL,
-        limit_ship REAL NOT NULL
+        limit_ship REAL NOT NULL,
+        shipyard TEXT   NOT NULL
     );
     CREATE TABLE modules(
         ship_id INT NOT NULL,
         type TEXT NOT NULL,
-        value float NOT NULL
+        turns_remains NOT NULL
     );"""
 rollback = """
     DROP TABLE IF EXISTS polities;
