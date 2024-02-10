@@ -339,6 +339,25 @@ async def system_build(interaction: discord.Interaction, first_value: str):
 
 
 @client.tree.command()
+@app_commands.describe(
+    first_value="название системы",
+)
+async def ship_build(interaction: discord.Interaction, first_value: str):
+    m = Message(interaction)
+    if m.auth():
+        """Построить в системе станцию."""
+        status = Game.build_Station(first_value)
+        if m.fill_string(status, "верфи"):
+            if status.name == "redundant_elem":
+                m.set_string("В системе уже строится корабль.")
+            else:
+                m.set_string(
+                    f"Пoстройка корябля в системе {first_value} успешно начата."
+                )
+    await interaction.response.send_message(m.get_string())
+
+
+@client.tree.command()
 @app_commands.describe(first_value="название системы", second_value="название здания")
 async def station_build(
     interaction: discord.Interaction, first_value: str, second_value: str
@@ -355,6 +374,27 @@ async def station_build(
             else:
                 m.set_string(
                     f"Постройка здания {second_value} успешно начата на станции в системе {first_value}."
+                )
+    await interaction.response.send_message(m.get_string())
+
+
+@client.tree.command()
+@app_commands.describe(first_value="название системы", second_value="название модуля")
+async def module_build(
+    interaction: discord.Interaction, first_value: str, second_value: str
+):
+    m = Message(interaction)
+    if m.auth():
+        """Начинаем строительство на планете."""
+        status = Game.improve_Station(first_value, second_value)
+        if m.fill_string(status, "строящегося корабля"):
+            if status.name == "invalid_elem":
+                m.set_string("Такого модуля не бывает.")
+            elif status.name == "redundant_elem":
+                m.set_string("Достигнут лимит лимита.")
+            else:
+                m.set_string(
+                    f"Модуль {second_value} успешно установлен на строящийся корабль в системе {first_value}."
                 )
     await interaction.response.send_message(m.get_string())
 
