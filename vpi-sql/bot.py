@@ -346,7 +346,7 @@ async def ship_build(interaction: discord.Interaction, first_value: str):
     m = Message(interaction)
     if m.auth():
         """Построить в системе станцию."""
-        status = Game.build_Station(first_value)
+        status = Game.build_Ship(first_value)
         if m.fill_string(status, "верфи"):
             if status.name == "redundant_elem":
                 m.set_string("В системе уже строится корабль.")

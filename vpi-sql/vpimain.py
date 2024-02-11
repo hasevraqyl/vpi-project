@@ -986,7 +986,7 @@ class Game(object):
         )
         if len(station) == 0:
             return DiscordStatusCode.no_elem
-        if station[1] != 0:
+        if station[0][1] != 0:
             return DiscordStatusCode.no_elem
         old_buildings = list(
             cur.execute(
@@ -1199,15 +1199,16 @@ class Game(object):
         else:
             return None, DiscordStatusCode.invalid_elem
 
-    def build_ship(cls, sys):
+    @classmethod
+    def build_Ship(cls, sys):
         if not check_table():
             return DiscordStatusCode.no_table
         sya = len(
             list(
                 cur.execute(
-                    "SELECT id FROM station_builds WHERE building = 'Верфь' and system = ? and turns_remains = 0"
-                ),
-                (sys,),
+                    "SELECT id FROM station_builds WHERE building = 'Верфь' and system = ? and turns_remains = 0",
+                    (sys,),
+                )
             )
         )
         if sya == 0:
