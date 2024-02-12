@@ -132,8 +132,18 @@ migration_prime = """
     );
     CREATE TABLE modules(
         ship_id INT NOT NULL,
-        type TEXT NOT NULL,
-        turns_remains NOT NULL
+        type TEXT NOT NULL
+    );
+    CREATE TABLE templates(
+        polity_id INT NOT NULL,
+        name TEXT NOT NULL,
+        cost REAL NOT NULL,
+        id INT NOT NULL
+    );
+    CREATE TABLE template_modules(
+        name TEXT NOT NULL,
+        id INT NOT NULL,
+        type TEXT NOT NULL
     );"""
 rollback = """
     DROP TABLE IF EXISTS polities;
@@ -152,4 +162,6 @@ rollback = """
     DROP TABLE IF EXISTS spaceships;
     DROP TABLE IF EXISTS modules;
     DROP TABLE IF EXISTS station_builds;
+    DROP TABLE IF EXISTS templates;
+    DROP TABLE IF EXISTS template_modules;
 """

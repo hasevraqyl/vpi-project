@@ -1200,9 +1200,12 @@ class Game(object):
             return None, DiscordStatusCode.invalid_elem
 
     @classmethod
-    def build_Ship(cls, sys):
+    def build_Ship(cls, name, tmpl, sys):
         if not check_table():
             return DiscordStatusCode.no_table
+        pol_id = list(
+            cur.execute("SELECT polity_id FROM systems WHERE system = ?", (sys,))
+        )[0][0]
         sya = len(
             list(
                 cur.execute(
@@ -1211,8 +1214,22 @@ class Game(object):
                 )
             )
         )
-        if sya == 0:
-            return DiscordStatusCode.no_elem
+        ships = len(
+            list(
+                cur.execute("SELECT ship_id FROM spaceships WHERE shipyard = ?", (sys,))
+            )
+        )
+        if ships >= sya:
+            return DiscordStatusCode.redundant_elem
+        t = list(
+            cur.execute(
+                "SELECT cost FROM templates WHERE name = ? AND polity_id = ?",
+                (
+                    tmpl,
+                    pol_id,
+                ),
+            )
+        )
         id = (
             list(cur.execute((cur.execute("SELECT MAX(id) FROM spaceships"))))[0][0] + 1
         )
@@ -1222,7 +1239,7 @@ class Game(object):
                 (
                     0,
                     id,
-                    0,
+                    t,
                     sys,
                 )
             ],
@@ -1230,32 +1247,48 @@ class Game(object):
         con.commit()
         return DiscordStatusCode.all_clear
 
-    def build_module(cls, name, sys):
+    def build_module(cls, pol, name, tmpl):
         if not check_table():
             return DiscordStatusCode.no_table
-        ship = list(
+        pol_id = list(
+            cur.execute("SELECT polity_id FROM polities WHERE polity_name = ?"), (pol,)
+        )[0][0]
+        if pol_id is None:
+            return DiscordStatusCode.no_elem
+        costid = list(
             cur.execute(
-                "SELECT ship_id, limit_ship FROM spaceships WHERE shipyard = ?", (sys,)
+                "SELECT cost, id FROM templates WHERE polity_id = ? AND name = ?",
+                (
+                    pol_id,
+                    tmpl,
+                ),
             )
         )[0]
-        if len(ship) == 0:
+        if costid[0] is None:
             return DiscordStatusCode.no_elem
         mod = Modules.fetch(name)
         if mod is None:
             return DiscordStatusCode.invalid_elem
-        nl = ship[1] + mod.cost
-        if nl > 1000:
+        totalcost = 0
+        for c in list(
+            cur.execute(
+                "SELECT type FROM template_modules WHERE name = ? AND id = ?",
+                (
+                    tmpl,
+                    costid[1],
+                ),
+            )
+        ):
+            totalcost += Modules.fetch(c[0]).cost
+        if totalcost > costid[0]:
             return DiscordStatusCode.redundant_elem
-        cur.execute(
-            "UPDATE spaceships SET limit_ship = nl WHERE ship_id = ?", (ship[0],)
-        )
         cur.executemany(
-            "INSERT INTO modules VALUES(?, ?, ?)",
+            "INSERT INTO template_modules VALUES(?, ?, ?)",
             [
                 (
-                    ship[0],
+                    tmpl,
+                    costid[1],
                     name,
-                    mod.buildtime,
                 )
             ],
         )
@@ -1263,6 +1296,43 @@ class Game(object):
         return DiscordStatusCode.all_clear
 
     "this function creates a common demographic space from two empires"
+
+    @classmethod
+    def build_Template(cls, pol, name, cost):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        pol_id = list(
+            cur.execute("SELECT polity_id FROM policies WHERE polity_name = ?", (pol,))
+        )[0][0]
+        if pol_id is None:
+            return DiscordStatusCode.no_elem
+        templ = list(
+            cur.execute(
+                "SELECT name FROM templates WHERE polity_id = ? AND name = ?",
+                (
+                    pol_id,
+                    name,
+                ),
+            )
+        )[0][0]
+        if templ is not None:
+            return DiscordStatusCode.redundant_elem
+        mx = 0
+        for id in cur.execute("SELECT id FROM templates"):
+            mx = max(mx, id[0])
+        cur.executemany(
+            "INSERT INTO templates VALUES(?, ?, ?, ?)",
+            [
+                (
+                    pol_id,
+                    name,
+                    cost,
+                    mx + 1,
+                )
+            ],
+        )
+        con.commit()
+        return DiscordStatusCode.all_clear
 
     @classmethod
     def agree(cls, pol_1, pol_2):
