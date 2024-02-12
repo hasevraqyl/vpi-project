@@ -1317,9 +1317,7 @@ class Game(object):
         )[0][0]
         if templ is not None:
             return DiscordStatusCode.redundant_elem
-        mx = 0
-        for id in cur.execute("SELECT id FROM templates"):
-            mx = max(mx, id[0])
+        mx = cur.execute("SELECT max(id) FROM templates")
         cur.executemany(
             "INSERT INTO templates VALUES(?, ?, ?, ?)",
             [
