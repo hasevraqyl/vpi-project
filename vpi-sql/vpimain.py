@@ -1247,6 +1247,7 @@ class Game(object):
         con.commit()
         return DiscordStatusCode.all_clear
 
+    @classmethod
     def build_module(cls, pol, name, tmpl):
         if not check_table():
             return DiscordStatusCode.no_table
@@ -1302,7 +1303,7 @@ class Game(object):
         if not check_table():
             return DiscordStatusCode.no_table
         pol_id = list(
-            cur.execute("SELECT polity_id FROM policies WHERE polity_name = ?", (pol,))
+            cur.execute("SELECT polity_id FROM polities WHERE polity_name = ?", (pol,))
         )[0][0]
         if pol_id is None:
             return DiscordStatusCode.no_elem
@@ -1314,10 +1315,12 @@ class Game(object):
                     name,
                 ),
             )
-        )[0][0]
-        if templ is not None:
+        )
+        if len(templ) != 0:
             return DiscordStatusCode.redundant_elem
-        mx = cur.execute("SELECT max(id) FROM templates")
+        mx = cur.execute("SELECT max(id) FROM templates").fetchone()[0]
+        if mx is None:
+            mx = 0
         cur.executemany(
             "INSERT INTO templates VALUES(?, ?, ?, ?)",
             [

@@ -379,14 +379,21 @@ async def station_build(
 
 
 @client.tree.command()
-@app_commands.describe(first_value="название системы", second_value="название модуля")
+@app_commands.describe(
+    first_value="название политиии",
+    second_value="название модуля",
+    third_value="название темплейта",
+)
 async def module_build(
-    interaction: discord.Interaction, first_value: str, second_value: str
+    interaction: discord.Interaction,
+    first_value: str,
+    second_value: str,
+    third_value: str,
 ):
     m = Message(interaction)
     if m.auth():
         """Начинаем строительство на планете."""
-        status = Game.improve_Station(first_value, second_value)
+        status = Game.build_module(first_value, second_value, third_value)
         if m.fill_string(status, "строящегося корабля"):
             if status.name == "invalid_elem":
                 m.set_string("Такого модуля не бывает.")
@@ -394,7 +401,33 @@ async def module_build(
                 m.set_string("Достигнут лимит лимита.")
             else:
                 m.set_string(
-                    f"Модуль {second_value} успешно установлен на строящийся корабль в системе {first_value}."
+                    f"Модуль {second_value} успешно установлен в темплейт {third_value}."
+                )
+    await interaction.response.send_message(m.get_string())
+
+
+@client.tree.command()
+@app_commands.describe(
+    first_value="название политиии",
+    second_value="название темплейта",
+    third_value="стоимость темплейта",
+)
+async def template_build(
+    interaction: discord.Interaction,
+    first_value: str,
+    second_value: str,
+    third_value: float,
+):
+    m = Message(interaction)
+    if m.auth():
+        """Начинаем строительство на планете."""
+        status = Game.build_Template(first_value, second_value, third_value)
+        if m.fill_string(status, "политии"):
+            if status.name == "redundant_elem":
+                m.set_string("Такой темплейт уже есть.")
+            else:
+                m.set_string(
+                    f"Темплейт {second_value} успешно создан, стоимость - {third_value}."
                 )
     await interaction.response.send_message(m.get_string())
 
