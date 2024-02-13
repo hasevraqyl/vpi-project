@@ -706,6 +706,38 @@ class Game(object):
     "this function fetches information about a polity"
 
     @classmethod
+    def polity_list(cls):
+        if not check_table():
+            return None, DiscordStatusCode.no_table
+        return (
+            comma_stringer(list(cur.execute("SELECT polity_name from polities"))),
+            DiscordStatusCode.all_clear,
+        )
+
+    """unfinished business below; need to research right/left join"""
+
+    @classmethod
+    def station_list(cls, pol):
+        if not check_table():
+            return None, DiscordStatusCode.no_table
+        pol_id = list(
+            cur.execute("SELECT polity_id FROM polities WHERE polity_name = ?", (pol,))
+        )
+        if len(pol_id) == 0:
+            return None, DiscordStatusCode.no_elem
+        return (
+            comma_stringer(
+                list(
+                    cur.execute(
+                        "SELECT DISTINCT system FROM systems WHERE polity_id = ? INNER JOIN stations ON stations.system = systems.system",
+                        pol_id[0],
+                    )
+                )
+            ),
+            DiscordStatusCode.all_clear,
+        )
+
+    @classmethod
     def fetch_Polity(cls, pol):
         if not check_table():
             return None, None, DiscordStatusCode.no_table
