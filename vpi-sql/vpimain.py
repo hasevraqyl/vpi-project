@@ -719,21 +719,38 @@ class Game(object):
     @classmethod
     def station_list(cls, pol):
         if not check_table():
-            return None, DiscordStatusCode.no_table
+            return None, None, DiscordStatusCode.no_table
         pol_id = list(
             cur.execute("SELECT polity_id FROM polities WHERE polity_name = ?", (pol,))
         )
         if len(pol_id) == 0:
-            return None, DiscordStatusCode.no_elem
+            return None, None, DiscordStatusCode.no_elem
         return (
             comma_stringer(
                 list(
                     cur.execute(
-                        "SELECT DISTINCT system FROM systems WHERE polity_id = ? INNER JOIN stations ON stations.system = systems.system",
+                        "SELECT DISTINCT systems.system FROM systems INNER JOIN stations ON stations.system = systems.system WHERE stations.turns_remains = 0 AND systems.polity_id = ?",
                         pol_id[0],
                     )
                 )
             ),
+            comma_stringer(
+                list(
+                    cur.execute(
+                        "SELECT DISTINCT systems.system FROM systems INNER JOIN stations ON stations.system = systems.system WHERE stations.turns_remains != 0 AND systems.polity_id = ?",
+                        pol_id[0],
+                    )
+                )
+            ),
+            DiscordStatusCode.all_clear,
+        )
+
+    @classmethod
+    def unclaimed_systems(cls):
+        if not check_table():
+            return None, DiscordStatusCode.no_table
+        return (
+            comma_stringer(list(cur.execute("SELECT system FROM unclaimed_systems"))),
             DiscordStatusCode.all_clear,
         )
 
