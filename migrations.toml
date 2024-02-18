@@ -120,9 +120,10 @@ migration_prime = """
         currently_researched INT NOT NULL
     );
     CREATE TABLE fleets(
+        own_id    INT NOT NULL PRIMARY KEY,
         polity_id INT NOT NULL,
-        own_id    INT NOT NULL,
-        position TEXT NOT NULL
+        position TEXT NOT NULL,
+        name TEXT     NOT NULL
     );
     CREATE TABLE spaceships(
         fleet INT NOT NULL,

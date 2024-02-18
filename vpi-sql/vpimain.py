@@ -191,6 +191,45 @@ def calc_munic(pln):
     return
 
 
+def calc_ship(pol):
+    for system in cur.execute(
+        "SELECT DISTINCT systems from systems WHERE pol_id = ?", (pol,)
+    ):
+        for ship in cur.execute(
+            "SELECT limit_ship, ship_id from spaceships WHERE shipyard = ?", system
+        ).fetchall():
+            if ship[0] < 300:
+                cur.execute(
+                    "UPDATE spaceships SET limit_ship = ?, shipyard = '' WHERE ship_id = ?",
+                    (
+                        0,
+                        ship[1],
+                    ),
+                )
+                id = cur.execute("SELECT MAX(own_id) from fleets").fetchone()
+                cur.executemany(
+                    "INSERT into fleets VALUES(?, ?, ?, ?)",
+                    [
+                        (
+                            id + 1,
+                            pol,
+                            system,
+                            system + str(id),
+                        )
+                    ],
+                )
+            else:
+                cur.execute(
+                    "UPDATE spaceships SET limit_ship = ? WHERE ship_id = ?",
+                    (
+                        ship[0] - 300,
+                        ship[1],
+                    ),
+                )
+        con.commit()
+        return
+
+
 def calc_tech(pol):
     techs = cur.execute(
         "SELECT tech_name, cost_left, currently_researched from techs WHERE polity_id = ?",
@@ -443,6 +482,7 @@ class Game(object):
                 "SELECT polity_id, polity_name, polity_desc, creds, science, limit_pol FROM polities"
             )
         ):
+            calc_ship(row[0])
             academics = 0.0
             turnpol = list(
                 cur.execute(
@@ -471,6 +511,7 @@ class Game(object):
                     "SELECT system, planet FROM systems WHERE polity_id = ?", (row[0],)
                 )
             ):
+
                 for row3 in list(
                     cur.execute(
                         "SELECT RO, BP, RS, GP, VP, pop, hosp FROM resources WHERE planet = ?",
