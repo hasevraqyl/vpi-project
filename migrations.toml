@@ -11,6 +11,10 @@ migration_prime = """
     science     REAL NOT NULL
                 DEFAULT (0.0),
     limit_pol       REAL NOT NULL
+                DEFAULT (0.0),
+    limit_hyp       REAL NOT NULL
+                DEFAULT (0.0),
+    limit_sil       REAL NOT NULL
                 DEFAULT (0.0)
     );
     CREATE TABLE resources (
@@ -28,6 +32,10 @@ migration_prime = """
     RS     REAL NOT NULL
                 DEFAULT (0.0),
     pop    REAL NOT NULL
+                DEFAULT (0.0),
+    hyp    REAL NOT NULL
+                DEFAULT (0.0),
+    sil    REAL NOT NULL
                 DEFAULT (0.0),
     hosp   INT  NOT NULL
                 DEFAULT (1)
@@ -75,6 +83,10 @@ migration_prime = """
                 DEFAULT (0.0),
     pop    REAL NOT NULL
                 DEFAULT (0.0),
+    hyp    REAL NOT NULL
+                DEFAULT (0.0),
+    sil    REAL NOT NULL
+                DEFAULT (0.0),
     turn   INT  NOT NULL
     );
     CREATE TABLE population_transfers(
@@ -93,6 +105,10 @@ migration_prime = """
     science     REAL NOT NULL
                 DEFAULT (0.0),
     limit_hpol       REAL NOT NULL
+                DEFAULT (0.0)
+    limit_hyp   REAL NOT NULL
+                DEFAULT (0.0),
+    limit_sil   REAL NOT NULL
                 DEFAULT (0.0)
     );
     CREATE TABLE unclaimed_systems(
@@ -131,6 +147,10 @@ migration_prime = """
         limit_ship REAL NOT NULL,
         shipyard TEXT   NOT NULL
     );
+    CREATE TABLE connections(
+        system1 TEXT NOT NULL,
+        system2 TEXT NOT NULL
+    )
     CREATE TABLE modules(
         ship_id INT NOT NULL,
         type TEXT NOT NULL

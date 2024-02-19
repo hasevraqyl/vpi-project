@@ -447,18 +447,18 @@ class Game(object):
         cur.executescript(info.get("rollback"))
         cur.executescript(info.get("migration_prime"))
         polities = [
-            (1, "pogglia", "no sex", 0.0, 0.0, 0.0),
-            (2, "ubia", "sex", 0.0, 0.0, 0.0),
+            (1, "pogglia", "no sex", 0.0, 0.0, 0.0, 0.0, 0.0),
+            (2, "ubia", "sex", 0.0, 0.0, 0.0, 0.0, 0.0),
         ]
-        cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?)", polities)
+        cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?, ?, ?)", polities)
         resources = [
-            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 10.0, 1),
-            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0, 1),
-            ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0, 10.0, 1),
-            ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0, 4.0, 1),
+            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 10.0, 1, 0.0, 0.0),
+            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0, 1, 0.0, 0.0),
+            ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0, 10.0, 1, 0.0, 0.0),
+            ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0, 4.0, 1, 0.0, 0.0),
         ]
         cur.executemany(
-            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)", resources
+            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", resources
         )
         planets = [
             (1, "poggl-loire", "moskvabad", 1),
@@ -479,7 +479,7 @@ class Game(object):
             return DiscordStatusCode.no_table
         for row in list(
             cur.execute(
-                "SELECT polity_id, polity_name, polity_desc, creds, science, limit_pol FROM polities"
+                "SELECT polity_id, polity_name, polity_desc, creds, science, limit_pol, limit_hyp, limit_sil FROM polities"
             )
         ):
             calc_ship(row[0])
@@ -503,6 +503,8 @@ class Game(object):
                         turnpol,
                         row[4],
                         row[5],
+                        row[6],
+                        row[7],
                     )
                 ],
             )
@@ -514,7 +516,7 @@ class Game(object):
 
                 for row3 in list(
                     cur.execute(
-                        "SELECT RO, BP, RS, GP, VP, pop, hosp FROM resources WHERE planet = ?",
+                        "SELECT RO, BP, RS, GP, VP, pop, hosp, hyp, sil FROM resources WHERE planet = ?",
                         (row2[1],),
                     )
                 ):
@@ -541,6 +543,8 @@ class Game(object):
                                 row3[4],
                                 row3[2],
                                 row3[5],
+                                row3[6],
+                                row3[7],
                                 turn,
                             )
                         ],
@@ -880,6 +884,95 @@ class Game(object):
             )
         con.commit()
         return pl_name[0][0], DiscordStatusCode.all_clear
+
+    @classmethod
+    def generate_system(cls, sys):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        if (
+            cur.execute(
+                "SELECT system from systems where system = ?", (sys,)
+            ).fetchone()
+            is not None
+        ):
+            return DiscordStatusCode.redundant_elem
+        b = rand_percent(10)
+        if b:
+            cur.executemany(
+                "INSERT INTO unclaimed_systems VALUES(?, ?)",
+                [
+                    (
+                        sys,
+                        f"{sys} 1",
+                    )
+                ],
+            )
+            x = rand_percent(3)
+            y = rand_percent(10)
+            hyp = 0.0
+            sil = 0.0
+            if x:
+                hyp = float(random.randint(2))
+            if y:
+                sil = float(random.randint(3))
+            cur.execute(
+                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        f"{sys} 1",
+                        float(random.randint(20)),
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        hyp,
+                        sil,
+                        1,
+                    )
+                ],
+            )
+        for i in range(random.randint(8)):
+            if b:
+                name = f"{sys} {i+2}"
+            else:
+                name = f"{sys} {i+1}"
+            cur.executemany(
+                "INSERT INTO unclaimed_systems VALUES(?, ?)",
+                [
+                    (
+                        sys,
+                        name,
+                    )
+                ],
+            )
+            x = rand_percent(3)
+            y = rand_percent(10)
+            hyp = 0.0
+            sil = 0.0
+            if x:
+                hyp = float(random.randint(2))
+            if y:
+                sil = float(random.randint(3))
+            cur.execute(
+                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        name,
+                        float(random.randint(20)),
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        hyp,
+                        sil,
+                        0,
+                    )
+                ],
+            )
+        con.commit()
+        return DiscordStatusCode.all_clear
 
     "this function creates an uninhabited unclaimed planet"
 
