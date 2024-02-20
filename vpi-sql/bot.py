@@ -173,6 +173,36 @@ async def system(interaction: discord.Interaction, first_value: str):
 
 @client.tree.command()
 @app_commands.describe(
+    first_value="название незаселенной системы",
+)
+async def unclaimed(interaction: discord.Interaction, first_value: str):
+    """Информация о незаселенной системе."""
+    message = Message(interaction)
+    if message.auth():
+        planets, status = Game.fetch_Unclaimed(first_value)
+        if message.fill_string(status, "системы"):
+            message.set_string(
+                f"Система {first_value} незаселена. \n В системе находятся следующие планеты: {planets}."
+            )
+    await interaction.response.send_message(message.get_string())
+
+
+@client.tree.command()
+@app_commands.describe(
+    first_value="название новой системы",
+)
+async def new_system(interaction: discord.Interaction, first_value: str):
+    """Создание новой незаселенной системы."""
+    message = Message(interaction)
+    if message.auth():
+        status = Game.generate_system(first_value)
+        if message.fill_string(status, ""):
+            message.set_string("Система успешно сгенерированна.")
+    await interaction.response.send_message(message.get_string())
+
+
+@client.tree.command()
+@app_commands.describe(
     first_value="название планеты",
 )
 async def buildings(interaction: discord.Interaction, first_value: str):

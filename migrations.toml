@@ -127,7 +127,13 @@ migration_prime = """
             GP     REAL NOT NULL
                 DEFAULT (0.0),
             VP     REAL NOT NULL
-                DEFAULT (0.0)
+                DEFAULT (0.0),
+            hyp    REAL NOT NULL
+                DEFAULT (0.0),
+            sil    REAL NOT NULL
+                DEFAULT (0.0),
+            hosp   INT NOT NULL
+                DEFAULT (0)
     );
     CREATE TABLE techs(
         polity_id INT NOT NULL,
