@@ -105,7 +105,7 @@ migration_prime = """
     science     REAL NOT NULL
                 DEFAULT (0.0),
     limit_hpol       REAL NOT NULL
-                DEFAULT (0.0)
+                DEFAULT (0.0),
     limit_hyp   REAL NOT NULL
                 DEFAULT (0.0),
     limit_sil   REAL NOT NULL
@@ -156,7 +156,7 @@ migration_prime = """
     CREATE TABLE connections(
         system1 TEXT NOT NULL,
         system2 TEXT NOT NULL
-    )
+    );
     CREATE TABLE modules(
         ship_id INT NOT NULL,
         type TEXT NOT NULL
@@ -191,4 +191,5 @@ rollback = """
     DROP TABLE IF EXISTS station_builds;
     DROP TABLE IF EXISTS templates;
     DROP TABLE IF EXISTS template_modules;
+    DROP TABLE IF EXISTS connections;
 """

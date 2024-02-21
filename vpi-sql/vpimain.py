@@ -760,7 +760,7 @@ class Game(object):
         return (
             comma_stringer(
                 cur.execute(
-                    "SELECT planet FROM systems where system = ?", (sys,)
+                    "SELECT planet FROM unclaimed_systems where system = ?", (sys,)
                 ).fetchall()
             ),
             DiscordStatusCode.all_clear,
@@ -813,7 +813,9 @@ class Game(object):
         if not check_table():
             return None, DiscordStatusCode.no_table
         return (
-            comma_stringer(list(cur.execute("SELECT system FROM unclaimed_systems"))),
+            comma_stringer(
+                list(cur.execute("SELECT DISTINCT system FROM unclaimed_systems"))
+            ),
             DiscordStatusCode.all_clear,
         )
 
@@ -932,15 +934,15 @@ class Game(object):
             hyp = 0.0
             sil = 0.0
             if x:
-                hyp = float(random.randint(2))
+                hyp = float(random.randint(0, 2))
             if y:
-                sil = float(random.randint(3))
-            cur.execute(
+                sil = float(random.randint(0, 3))
+            cur.executemany(
                 "INSERT INTO unclaimed_planets VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         f"{sys} 1",
-                        float(random.randint(20)),
+                        float(random.randint(0, 20)),
                         0.0,
                         0.0,
                         0.0,
@@ -950,7 +952,7 @@ class Game(object):
                     )
                 ],
             )
-        for i in range(random.randint(pl)):
+        for i in range(random.randint(0, pl)):
             if b:
                 name = f"{sys} {i+2}"
             else:
@@ -969,15 +971,15 @@ class Game(object):
             hyp = 0.0
             sil = 0.0
             if x:
-                hyp = float(random.randint(2))
+                hyp = float(random.randint(0, 2))
             if y:
-                sil = float(random.randint(3))
+                sil = float(random.randint(0, 3))
             cur.executemany(
                 "INSERT INTO unclaimed_planets VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         name,
-                        float(random.randint(20)),
+                        float(random.randint(0, 20)),
                         0.0,
                         0.0,
                         0.0,
