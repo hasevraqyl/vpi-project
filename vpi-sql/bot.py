@@ -189,13 +189,13 @@ async def unclaimed(interaction: discord.Interaction, first_value: str):
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название новой системы",
+    name="название новой системы",
 )
-async def new_system(interaction: discord.Interaction, first_value: str):
+async def new_system(interaction: discord.Interaction, name: str):
     """Создание новой незаселенной системы."""
     message = Message(interaction)
     if message.auth():
-        status = Game.generate_system(first_value)
+        status = Game.generate_system(name)
         if message.fill_string(status, ""):
             message.set_string("Система успешно сгенерированна.")
     await interaction.response.send_message(message.get_string())
@@ -203,13 +203,13 @@ async def new_system(interaction: discord.Interaction, first_value: str):
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название планеты",
+    name="название планеты",
 )
-async def buildings(interaction: discord.Interaction, first_value: str):
+async def buildings(interaction: discord.Interaction, name: str):
     """Информация о постройках на планете."""
     message = Message(interaction)
     if message.auth():
-        builds, status = Game.planet_Buildings(first_value)
+        builds, status = Game.planet_Buildings(name)
         if message.fill_string(status, "планеты"):
             string = ""
             for building in builds:
@@ -220,32 +220,32 @@ async def buildings(interaction: discord.Interaction, first_value: str):
                 else:
                     string += f"\n {building[0]}"
             message.set_string(
-                f"На планете {first_value} находятся следующие постройки: {string}"
+                f"На планете {name} находятся следующие постройки: {string}"
             )
     await interaction.response.send_message(message.get_string())
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название планеты",
+    name="название планеты",
 )
-async def demographics(interaction: discord.Interaction, first_value: str):
+async def demographics(interaction: discord.Interaction, name: str):
     """Информация о населении планеты."""
     message = Message(interaction)
     if message.auth():
-        bf, stl, pln, status = Game.planet_demos(first_value)
+        bf, stl, pln, status = Game.planet_demos(name)
         if message.fill_string(status, "планеты"):
             if status.name == "invalid_elem":
                 message.set_string("Нет данных по населению прошлых лет.")
             else:
                 if bf == []:
                     message.set_string(
-                        f"""Текущее население на планете {first_value} - {round(pln[5], 2)}.
+                        f"""Текущее население на планете {name} - {round(pln[5], 2)}.
                 За последний год население изменилось на {round((1-(stl[5]/pln[5])), 2)*100}% c {round(stl[5], 2)}."""
                     )
                 else:
                     message.set_string(
-                        f"""Текущее население на планете {first_value} - {round(pln[5], 2)}.
+                        f"""Текущее население на планете {name} - {round(pln[5], 2)}.
                 За последний год население изменилось на {round((1-(stl[5]/pln[5]))*100, 2)}% c {round(stl[5], 2)}.
                 За последние пять лет население изменилось на {round((1-(bf[5]/pln[5]))*100, 2)}% с {round(bf[5], 2)}."""
                     )
@@ -254,24 +254,24 @@ async def demographics(interaction: discord.Interaction, first_value: str):
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название планеты",
+    name="название планеты",
 )
-async def finances(interaction: discord.Interaction, first_value: str):
+async def finances(interaction: discord.Interaction, name: str):
     """Информация о финансах империи."""
     message = Message(interaction)
     if message.auth():
-        bf, stl, pln, status = Game.polity_finances(first_value)
+        bf, stl, pln, status = Game.polity_finances(name)
         if message.fill_string(status, "империи"):
             if status.name == "invalid_elem":
                 message.set_string("Нет данных по бюджету прошлых лет.")
             else:
                 if bf == -100000.0:
                     message.set_string(
-                        f"""В настоящий момент баланс империи {first_value} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}."""
+                        f"""В настоящий момент баланс империи {name} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}."""
                     )
                 else:
                     message.set_string(
-                        f"""В настоящий момент баланс империи {first_value} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}.
+                        f"""В настоящий момент баланс империи {name} - {round(pln, 2)}. За последний год баланс изменился на {round(pln-stl, 2)} c {round(stl, 2)}.
                 За последние пять лет баланс изменился на {round(pln-bf, 2)} с {round(bf, 2)}."""
                     )
     await interaction.response.send_message(message.get_string())
@@ -301,84 +301,72 @@ async def caqlculate_ql(interaction: discord.Interaction, first_value: str):
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название империи",
+    name="название империи",
 )
-async def polity(interaction: discord.Interaction, first_value: str):
+async def polity(interaction: discord.Interaction, name: str):
     """Информация об империи."""
     m = Message(interaction)
     if m.auth():
-        creds, systems, status = Game.fetch_Polity(first_value)
+        creds, systems, status = Game.fetch_Polity(name)
         if m.fill_string(status, "империи"):
             m.set_string(
-                f"Империя {first_value} имеет баланс в {creds} кредитов. \nВ состав империи входят следующие системы: {systems}"
+                f"Империя {name} имеет баланс в {creds} кредитов. \nВ состав империи входят следующие системы: {systems}"
             )
     await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название планеты", second_value="количество добавляемой продукции"
+    name="название планеты", amount="количество добавляемой продукции"
 )
-async def planet_add_bp(
-    interaction: discord.Interaction, first_value: str, second_value: int
-):
+async def planet_add_bp(interaction: discord.Interaction, name: str, amount: int):
     """Добавляем продукцию."""
     m = Message(interaction)
     if m.auth():
-        status = Game.add_BP(first_value, second_value)
+        status = Game.add_BP(name, amount)
         if m.fill_string(status, "планеты"):
-            m.set_string(
-                f"Базовая продукция увеличена на {second_value} на планете {first_value}."
-            )
+            m.set_string(f"Базовая продукция увеличена на {amount} на планете {name}.")
     await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
-@app_commands.describe(first_value="название системы", second_value="название планеты")
-async def create_planet(
-    interaction: discord.Interaction, first_value: str, second_value: str
-):
+@app_commands.describe(system="название системы", planet="название планеты")
+async def create_planet(interaction: discord.Interaction, system: str, planet: str):
     """Создаем планету."""
     m = Message(interaction)
     if m.auth():
-        status = Game.create_planet(first_value, second_value)
+        status = Game.create_planet(system, planet)
         if m.fill_string(status, ""):
             if status.name == "redundant_elem":
                 m.set_string(
                     "Такая планета или система уже существует в составе какой-то империи."
                 )
             else:
-                m.set_string(
-                    f"Создана планета {second_value} в составе системы {first_value}."
-                )
+                m.set_string(f"Создана планета {planet} в составе системы {system}.")
     await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
-@app_commands.describe(first_value="название политии", second_value="название системы")
-async def claim_system(
-    interaction: discord.Interaction, first_value: str, second_value: str
-):
+@app_commands.describe(polity="название политии", system="название системы")
+async def claim_system(interaction: discord.Interaction, polity: str, system: str):
     """Передаем систему политии."""
     m = Message(interaction)
     if m.auth():
-        status = Game.claim_system(first_value, second_value)
+        status = Game.claim_system(polity, system)
         if m.fill_string(status, "системы или политии"):
             m.set_string(
-                f"Система {second_value} передана политии {first_value} вместе с планетами."
+                f"Система {system} передана политии {polity} вместе с планетами."
             )
     await interaction.response.send_message(m.set_string())
 
 
 @client.tree.command()
-@app_commands.describe(first_value="название планеты", second_value="название здания")
-async def planet_build(
-    interaction: discord.Interaction, first_value: str, second_value: str
-):
+@app_commands.describe(name="название планеты", building="название здания")
+async def planet_build(interaction: discord.Interaction, name: str, building: str):
     """Начинаем строительство на планете."""
     m = Message(interaction)
     if m.auth():
-        status = Game.build_Building(first_value, second_value)
+        status = Game.build_Building(name, building)
         if m.fill_string(status, "планеты"):
             if status.name == "invalid_elem":
                 m.set_string("Такого здания не бывает.")
@@ -386,58 +374,52 @@ async def planet_build(
                 m.set_string("Достигнут лимит зданий данного типа.")
             else:
                 m.set_string(
-                    f"Постройка здания {second_value} успешно начата на планете {first_value}."
+                    f"Постройка здания {building} успешно начата на планете {name}."
                 )
     await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название системы",
+    name="название системы",
 )
-async def system_build(interaction: discord.Interaction, first_value: str):
+async def system_build(interaction: discord.Interaction, name: str):
     """Построить в системе станцию."""
     m = Message(interaction)
     if m.auth():
-        status = Game.build_Station(first_value)
+        status = Game.build_Station(name)
         if m.fill_string(status, "системы"):
             if status.name == "redundant_elem":
                 m.set_string("В системе уже есть станция.")
             else:
-                m.set_string(
-                    f"Пoстройка станции в системе {first_value} успешно начата."
-                )
+                m.set_string(f"Пoстройка станции в системе {name} успешно начата.")
     await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название системы",
+    name="название системы",
 )
-async def ship_build(interaction: discord.Interaction, first_value: str):
+async def ship_build(interaction: discord.Interaction, name: str):
     """Построить в системе корабль."""
     m = Message(interaction)
     if m.auth():
-        status = Game.build_Ship(first_value)
+        status = Game.build_Ship(name)
         if m.fill_string(status, "верфи"):
             if status.name == "redundant_elem":
                 m.set_string("В системе уже строится корабль.")
             else:
-                m.set_string(
-                    f"Пoстройка корябля в системе {first_value} успешно начата."
-                )
+                m.set_string(f"Пoстройка корябля в системе {name} успешно начата.")
     await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
-@app_commands.describe(first_value="название системы", second_value="название здания")
-async def station_build(
-    interaction: discord.Interaction, first_value: str, second_value: str
-):
+@app_commands.describe(name="название системы", building="название здания")
+async def station_build(interaction: discord.Interaction, name: str, building: str):
     """Начинаем строительство на станции."""
     m = Message(interaction)
     if m.auth():
-        status = Game.improve_Station(first_value, second_value)
+        status = Game.improve_Station(name, building)
         if m.fill_string(status, "системы либо станции в системе"):
             if status.name == "invalid_elem":
                 m.set_string("Такого здания не бывает.")
@@ -445,27 +427,27 @@ async def station_build(
                 m.set_string("Достигнут лимит зданий данного типа.")
             else:
                 m.set_string(
-                    f"Постройка здания {second_value} успешно начата на станции в системе {first_value}."
+                    f"Постройка здания {building} успешно начата на станции в системе {name}."
                 )
     await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название политиии",
-    second_value="название модуля",
-    third_value="название темплейта",
+    polity="название политиии",
+    module="название модуля",
+    template="название темплейта",
 )
 async def module_build(
     interaction: discord.Interaction,
-    first_value: str,
-    second_value: str,
-    third_value: str,
+    polity: str,
+    module: str,
+    template: str,
 ):
     """Добавляем модуль в темплейт."""
     m = Message(interaction)
     if m.auth():
-        status = Game.build_module(first_value, second_value, third_value)
+        status = Game.build_module(polity, module, template)
         if m.fill_string(status, "темплейта"):
             if status.name == "invalid_elem":
                 m.set_string("Такого модуля не бывает.")
@@ -473,71 +455,63 @@ async def module_build(
                 m.set_string("Достигнут лимит лимита.")
             else:
                 m.set_string(
-                    f"Модуль {second_value} успешно установлен в темплейт {third_value}."
+                    f"Модуль {module} успешно установлен в темплейт {template}."
                 )
     await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название политиии",
-    second_value="название темплейта",
-    third_value="стоимость темплейта",
+    polity="название политиии",
+    name="название темплейта",
+    cost="стоимость темплейта",
 )
 async def template_build(
     interaction: discord.Interaction,
-    first_value: str,
-    second_value: str,
-    third_value: float,
+    polity: str,
+    name: str,
+    cost: float,
 ):
     """Создаем темплейт."""
     m = Message(interaction)
     if m.auth():
-        status = Game.build_Template(first_value, second_value, third_value)
+        status = Game.build_Template(polity, name, cost)
         if m.fill_string(status, "политии"):
             if status.name == "redundant_elem":
                 m.set_string("Такой темплейт уже есть.")
             else:
-                m.set_string(
-                    f"Темплейт {second_value} успешно создан, стоимость - {third_value}."
-                )
+                m.set_string(f"Темплейт {name} успешно создан, стоимость - {cost}.")
     await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название cистемы", second_value="название новой правящей империи"
+    system="название cистемы", polity="название новой правящей империи"
 )
-async def transfer(
-    interaction: discord.Interaction, first_value: str, second_value: str
-):
+async def transfer(interaction: discord.Interaction, system: str, polity: str):
     """Передаем систему от одной империи к другой."""
     m = Message(interaction)
     if m.auth():
-        oldsys, status = Game.transfer_System(first_value, second_value)
+        oldsys, status = Game.transfer_System(system, polity)
         if m.fill_string(status, "системы либо империи"):
             if status.name == "invalid_elem":
                 m.set_string(
-                    f"Система {first_value} уже находится под контролем империи {second_value}."
+                    f"Система {system} уже находится под контролем империи {polity}."
                 )
             else:
                 m.set_string(
-                    f"Система {first_value} передана от империи {oldsys} империи {second_value}."
+                    f"Система {system} передана от империи {oldsys} империи {polity}."
                 )
     await interaction.response.send_message("Ты тварь дрожащая и права не имеешь.")
 
 
 @client.tree.command()
-@app_commands.describe(
-    first_value="название политии", second_value="название технологии"
-)
-async def research_tech(
-    interaction: discord.Interaction, first_value: str, second_value: str
-):
+@app_commands.describe(polity="название политии", tech="название технологии")
+async def research_tech(interaction: discord.Interaction, polity: str, tech: str):
     """Начинаем исследование технологии."""
     m = Message(interaction)
     if m.auth():
-        cures, status = Game.research_tech(first_value, second_value)
+        cures, status = Game.research_tech(polity, tech)
         if m.fill_string(status, "империи"):
             if status.name == "invalid_elem":
                 m.set_string("Ошибка. Технологии не существует.")
@@ -545,10 +519,10 @@ async def research_tech(
                 m.set_string("Технология уже исследована или исследуется.")
             else:
                 if cures == "":
-                    m.set_string(f"Начато исследование технологии {second_value}")
+                    m.set_string(f"Начато исследование технологии {tech}")
                 else:
                     m.set_string(
-                        f"Начато исследование технологии {second_value}. Прекращено исследование {cures}."
+                        f"Начато исследование технологии {tech}. Прекращено исследование {cures}."
                     )
     await interaction.response.send_message(m.get_string())
 
