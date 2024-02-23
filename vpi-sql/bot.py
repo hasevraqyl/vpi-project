@@ -151,13 +151,13 @@ async def station_list(interaction: discord.Interaction, polity: str):
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название системы",
+    name="название системы",
 )
-async def system(interaction: discord.Interaction, first_value: str):
+async def system(interaction: discord.Interaction, name: str):
     """Информация о системе."""
     message = Message(interaction)
     if message.auth():
-        polity, planets, st, status = Game.fetch_System(first_value)
+        polity, planets, st, status = Game.fetch_System(name)
         if message.fill_string(status, "системы"):
             if st is None:
                 sst = ""
@@ -166,23 +166,23 @@ async def system(interaction: discord.Interaction, first_value: str):
             else:
                 sst = f"В системе есть строящаяся станция. До завершения {st} ходов."
             message.set_string(
-                f"Система {first_value} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets} {sst}"
+                f"Система {name} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets} {sst}"
             )
     await interaction.response.send_message(message.get_string())
 
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название незаселенной системы",
+    name="название незаселенной системы",
 )
-async def unclaimed(interaction: discord.Interaction, first_value: str):
+async def unclaimed(interaction: discord.Interaction, name: str):
     """Информация о незаселенной системе."""
     message = Message(interaction)
     if message.auth():
-        planets, status = Game.fetch_Unclaimed(first_value)
+        planets, status = Game.fetch_Unclaimed(name)
         if message.fill_string(status, "системы"):
             message.set_string(
-                f"Система {first_value} незаселена. \n В системе находятся следующие планеты: {planets}."
+                f"Система {name} незаселена. \n В системе находятся следующие планеты: {planets}."
             )
     await interaction.response.send_message(message.get_string())
 
