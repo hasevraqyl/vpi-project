@@ -117,16 +117,16 @@ async def restart(interaction: discord.Interaction):
 
 @client.tree.command()
 @app_commands.describe(
-    first_value="название планеты",
+    name="название планеты",
 )
-async def planet(interaction: discord.Interaction, first_value: str):
+async def planet(interaction: discord.Interaction, name: str):
     """Информация о планете."""
     message = Message(interaction)
     if message.auth():
-        system, resources, status = Game.fetch_Planet(first_value)
+        system, resources, status = Game.fetch_Planet(name)
         if message.fill_string(status, "планеты"):
             message.set_string(
-                f"""Планета {first_value} находится в системе {system}.
+                f"""Планета {name} находится в системе {system}.
                 \n Общий прирост {abs(resources[0])}; базовая продукция {resources[1]}; гражданская продукция {resources[2]}; военная продукция {resources[3]}; накопленных ресурсов {round(abs(resources[4]), 2)}.
                 \n Население {round(resources[5], 2)}. Коэффициент занятости tbd."""
             )
@@ -275,28 +275,6 @@ async def finances(interaction: discord.Interaction, name: str):
                 За последние пять лет баланс изменился на {round(pln-bf, 2)} с {round(bf, 2)}."""
                     )
     await interaction.response.send_message(message.get_string())
-
-
-"the following command has been deprecated"
-"""
-@client.tree.command()
-@app_commands.describe(
-    first_value="название планеты",
-)
-async def caqlculate_ql(interaction: discord.Interaction, first_value: str):
-    "Информация об уровне жизни на планете."
-    builds, status = Game.calculate_ql(first_value)
-    if status.name == "no_elem":
-        await interaction.response.send_message(
-            "Такой планеты нету либо там вообще жить негде."
-        )
-    elif status.name == "no_table":
-        await interaction.response.send_message("Ошибка. Перезапустите игру.")
-    else:
-        await interaction.response.send_message(
-            f"На планете {first_value} уровень жизни равен {builds}."
-        )
-        """
 
 
 @client.tree.command()
