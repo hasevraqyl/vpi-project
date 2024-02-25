@@ -82,6 +82,9 @@ class Buildings(Base):
         "Аварийные кварталы": B(
             "Аварийные кварталы", 0.0, 0.0, 0.0, 0, 0, False, False, True, True
         ),
+        "Шахта": B("Шахта", 2.0, 0.0, 0.0, 2, 1000, False, False, False, False),
+        "Шахта Г": B("Шахта Г", 2.0, 0.0, 0.0, 2, 1000, False, False, False, False),
+        "Шахта С": B("Шахта С", 2.0, 0.0, 0.0, 2, 1000, False, False, False, False),
     }
 
     """

@@ -106,6 +106,20 @@ def calculate_academics(b):
     return science_output
 
 
+def calculate_h(b):
+    total_h = 0.0
+    if b[0] == "Шахта Г" and b[1] == 0:
+        total_h = 1.0
+    return total_h
+
+
+def calculate_s(b):
+    total_s = 0.0
+    if b[0] == "Шахта С" and b[1] == 0:
+        total_s = 1.0
+    return total_s
+
+
 """temporary function"""
 
 "actually i can finally begin working on this one properly"
@@ -524,6 +538,8 @@ class Game(object):
                     housing = 0.0
                     bp_total = row3[1]
                     vp_total = row3[4]
+                    total_h = 0.0
+                    total_s = 0.0
                     turn = list(
                         cur.execute(
                             "SELECT MAX(turn) FROM historical_planet where planet = ?",
@@ -570,6 +586,8 @@ class Game(object):
                             "the following might be deprecated"
                             bp_total = calculate_bp(row4, bp_total)
                             vp_total = calculate_vp(row4, vp_total)
+                            total_h = calculate_h(row4)
+                            total_s = calculate_s(row4)
                             calc_wearing(row2[1], row4)
                             bi = Buildings.fetch(row4[0])
                             cur.execute(
@@ -618,7 +636,7 @@ class Game(object):
                     )
                     new_values = list(
                         cur.execute(
-                            "SELECT creds, limit_pol FROM polities WHERE polity_id = ?",
+                            "SELECT creds, limit_pol, hyp, sil FROM polities WHERE polity_id = ?",
                             (row[0],),
                         )
                     )[0]
@@ -630,9 +648,11 @@ class Game(object):
                         ),
                     )
                     cur.execute(
-                        "UPDATE polities SET limit_pol = ? WHERE polity_id = ?",
+                        "UPDATE polities SET limit_pol = ?, hyp = ?, sil = ? WHERE polity_id = ?",
                         (
                             (new_values[1] + (vp_total * cpop)),
+                            (new_values[2] + total_h),
+                            (new_values[3] + total_s),
                             row[0],
                         ),
                     )
@@ -1089,7 +1109,9 @@ class Game(object):
         if b is None or b.b:
             return DiscordStatusCode.invalid_elem
         planet = list(
-            cur.execute("SELECT planet, hosp from systems where planet = ?", (pln,))
+            cur.execute(
+                "SELECT planet, hosp, hyp, sys from systems where planet = ?", (pln,)
+            )
         )[0]
         if len(planet) == 0:
             return DiscordStatusCode.no_elem
@@ -1109,6 +1131,10 @@ class Game(object):
             if old_building[0] == building:
                 n += 1
             if n == Buildings.fetch(old_building[0]).maxi:
+                return DiscordStatusCode.redundant_elem
+            if building == "Шахта Г" and n == planet[2]:
+                return DiscordStatusCode.redundant_elem
+            if building == "Шахта С" and n == planet[3]:
                 return DiscordStatusCode.redundant_elem
         cur.executemany(
             "INSERT INTO buildings VALUES(?, ?, ?, ?, ?)",
