@@ -113,6 +113,12 @@ def calculate_h(b):
     return total_h
 
 
+def calculate_sh(b):
+    if b[0] == "Шахта" and b[1] == 0:
+        return 1.0
+    return 0
+
+
 def calculate_s(b):
     total_s = 0.0
     if b[0] == "Шахта С" and b[1] == 0:
@@ -540,6 +546,7 @@ class Game(object):
                     vp_total = row3[4]
                     total_h = 0.0
                     total_s = 0.0
+                    total_sh = 0.0
                     turn = list(
                         cur.execute(
                             "SELECT MAX(turn) FROM historical_planet where planet = ?",
@@ -588,6 +595,7 @@ class Game(object):
                             vp_total = calculate_vp(row4, vp_total)
                             total_h = calculate_h(row4)
                             total_s = calculate_s(row4)
+                            total_sh = calculate_sh(row4)
                             calc_wearing(row2[1], row4)
                             bi = Buildings.fetch(row4[0])
                             cur.execute(
@@ -618,7 +626,8 @@ class Game(object):
                         cpop = 1
                     chouse = housing / row3[5]
                     ctotal = cpop * 0.3 + chouse * 0.7
-                    rsnew = row3[2] + ((row3[0] - bp_total) * ctotal)
+                    bp_total = min(bp_total, total_sh)
+                    rsnew = min((row3[2] + ((row3[0] - bp_total) * ctotal)), total_sh)
                     popnew = row3[5] * 1.01
                     cur.execute(
                         "UPDATE resources SET RS = ? WHERE planet = ?",
@@ -1110,7 +1119,8 @@ class Game(object):
             return DiscordStatusCode.invalid_elem
         planet = list(
             cur.execute(
-                "SELECT planet, hosp, hyp, sys from systems where planet = ?", (pln,)
+                "SELECT planet, hosp, hyp, sys, RO from systems where planet = ?",
+                (pln,),
             )
         )[0]
         if len(planet) == 0:
@@ -1135,6 +1145,8 @@ class Game(object):
             if building == "Шахта Г" and n == planet[2]:
                 return DiscordStatusCode.redundant_elem
             if building == "Шахта С" and n == planet[3]:
+                return DiscordStatusCode.redundant_elem
+            if building == "Шахта" and n == planet[4]:
                 return DiscordStatusCode.redundant_elem
         cur.executemany(
             "INSERT INTO buildings VALUES(?, ?, ?, ?, ?)",
