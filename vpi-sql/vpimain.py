@@ -871,6 +871,88 @@ class Game(object):
     "possibly deprecated: this function adds basic production to a plent"
 
     @classmethod
+    def create_Connection(cls, sys1, sys2):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        for s in [sys1, sys2]:
+            if (
+                cur.execute(
+                    "SELECT DISTINCT system FROM systems WHERE system = ?", (s,)
+                ).fetchone()
+                is None
+                and cur.execute(
+                    "SELECT DISTINCT system from unclaimed_systems WHERE system = ?",
+                    (s,),
+                ).fetchone()
+                is None
+            ):
+                return DiscordStatusCode.no_elem
+        if (
+            cur.execute(
+                "SELECT system1 FROM connections WHERE system1 = ?, system2 = ?",
+                (
+                    sys1,
+                    sys2,
+                ),
+            ).fetchone()
+            or cur.execute(
+                "SELECT system1 FROM unclaimed_connections WHERE system1 = ?, system2 = ?",
+                (
+                    sys1,
+                    sys2,
+                ),
+            )
+        ) is not None:
+            return DiscordStatusCode.redundant_elem
+        if (
+            cur.execute("SELECT DISTINCT system FROM systems wHERE system = ?", (sys1,))
+            is not None
+        ):
+            cur.executemany(
+                "INSERT INTO connections VALUES(?, ?)",
+                [
+                    (
+                        sys1,
+                        sys2,
+                    )
+                ],
+            )
+        else:
+            cur.executemany(
+                "INSERT INTO unclaimed_connections VALUES(?, ?)",
+                [
+                    (
+                        sys1,
+                        sys2,
+                    )
+                ],
+            )
+        if (
+            cur.execute("SELECT DISTINCT system FROM systems wHERE system = ?", (sys2,))
+            is not None
+        ):
+            cur.executemany(
+                "INSERT INTO connections VALUES(?, ?)",
+                [
+                    (
+                        sys2,
+                        sys1,
+                    )
+                ],
+            )
+        else:
+            cur.executemany(
+                "INSERT INTO unclaimed_connections VALUES(?, ?)",
+                [
+                    (
+                        sys2,
+                        sys1,
+                    )
+                ],
+            )
+        return DiscordStatusCode.all_clear
+
+    @classmethod
     def add_BP(cls, pln, rsrs):
         if not check_table():
             return DiscordStatusCode.no_table

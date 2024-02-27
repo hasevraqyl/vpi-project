@@ -157,6 +157,10 @@ migration_prime = """
         system1 TEXT NOT NULL,
         system2 TEXT NOT NULL
     );
+    CREATE TABLE unclaimed_connections(
+        system1 TEXT NOT NULL, 
+        system2 TEXT NOT NULL
+    );
     CREATE TABLE modules(
         ship_id INT NOT NULL,
         type TEXT NOT NULL
@@ -192,4 +196,5 @@ rollback = """
     DROP TABLE IF EXISTS templates;
     DROP TABLE IF EXISTS template_modules;
     DROP TABLE IF EXISTS connections;
+    DROPR TABLE IF EXISTS unclaimed_connections;
 """
