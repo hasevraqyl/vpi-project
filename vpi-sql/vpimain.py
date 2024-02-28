@@ -213,7 +213,7 @@ def calc_munic(pln):
 
 def calc_ship(pol):
     for system in cur.execute(
-        "SELECT DISTINCT systems from systems WHERE pol_id = ?", (pol,)
+        "SELECT DISTINCT system from systems WHERE polity_id = ?", (pol,)
     ):
         for ship in cur.execute(
             "SELECT limit_ship, ship_id from spaceships WHERE shipyard = ?", system
@@ -513,7 +513,7 @@ class Game(object):
             if turnpol is None:
                 turnpol = 1
             cur.executemany(
-                "INSERT INTO historical_polity VALUES(?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO historical_polity VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         row[0],
@@ -556,7 +556,7 @@ class Game(object):
                     if turn is None:
                         turn = 1
                     cur.executemany(
-                        "INSERT INTO historical_planet VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+                        "INSERT INTO historical_planet VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         [
                             (
                                 row2[1],
@@ -645,7 +645,7 @@ class Game(object):
                     )
                     new_values = list(
                         cur.execute(
-                            "SELECT creds, limit_pol, hyp, sil FROM polities WHERE polity_id = ?",
+                            "SELECT creds, limit_pol, limit_hyp, limit_sil FROM polities WHERE polity_id = ?",
                             (row[0],),
                         )
                     )[0]
@@ -657,7 +657,7 @@ class Game(object):
                         ),
                     )
                     cur.execute(
-                        "UPDATE polities SET limit_pol = ?, hyp = ?, sil = ? WHERE polity_id = ?",
+                        "UPDATE polities SET limit_pol = ?, limit_hyp = ?, limit_sil = ? WHERE polity_id = ?",
                         (
                             (new_values[1] + (vp_total * cpop)),
                             (new_values[2] + total_h),
@@ -743,12 +743,12 @@ class Game(object):
     @classmethod
     def fetch_System(cls, sys):
         if not check_table():
-            return None, None, None, DiscordStatusCode.no_table
+            return None, None, None, None, DiscordStatusCode.no_table
         pl_sys = list(
             cur.execute("SELECT system FROM systems where system = ?", (sys,))
         )
         if len(pl_sys) == 0:
-            return None, None, None, DiscordStatusCode.no_elem
+            return None, None, None, None, DiscordStatusCode.no_elem
         planet_list = list(
             cur.execute("SELECT planet FROM systems where system = ?", (sys,))
         )
@@ -762,7 +762,9 @@ class Game(object):
             sst = sl[0][1]
         elif len(sl) > 0 and sl[0][1] == 0:
             sst = 0
+        connection_list = cur.execute("SELECT system2 FROM connections WHERE system1 = ?", (sys,)).fetchall()
         planet_string = comma_stringer(planet_list)
+        connection_string = comma_stringer(connection_list)
         polity = list(
             cur.execute(
                 "SELECT polity_name FROM polities where polity_id = ?",
@@ -775,7 +777,7 @@ class Game(object):
                 ),
             )
         )[0][0]
-        return polity, planet_string, sst, DiscordStatusCode.all_clear
+        return polity, planet_string, sst, connection_string, DiscordStatusCode.all_clear
 
     @classmethod
     def fetch_Unclaimed(cls, sys):
@@ -1145,48 +1147,58 @@ class Game(object):
     def claim_system(cls, plt, sys):
         if not check_table():
             return DiscordStatusCode.no_table
-        plt_id = list(
-            cur.execute("SELECT polity_id from polities where polity_name = ?", (plt,))
-        )
-        if len(plt_id) == 0:
+        plt_id = cur.execute(
+            "SELECT polity_id FROM polities WHERE polity_name = ?", (plt,)
+        ).fetchone()
+        if plt_id is None:
             return DiscordStatusCode.no_elem
-        else:
-            polid = plt_id[0][0]
-        planets = list(
-            cur.execute("SELECT planet from unclaimed_systems WHERE system = ?", (sys,))
-        )
+        planets = cur.execute(
+            "SELECT planet FROM unclaimed_systems WHERE system = ?", (sys,)
+        ).fetchall()
         if len(planets) == 0:
             return DiscordStatusCode.no_elem
         for planet in planets:
+            res = cur.execute(
+                "SELECT RO, BP, GP, VP, hyp, sil, hosp FROM unclaimed_planets WHERE planet = ?",
+                planet,
+            ).fetchall()
             cur.executemany(
-                "INSERT INTO systems VALUES(?, ?, ?)",
+                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
-                        polid,
-                        sys,
                         planet[0],
+                        res[0],
+                        res[1],
+                        res[2],
+                        res[3],
+                        0.0,
+                        res[4],
+                        res[5],
+                        res[6],
                     )
                 ],
             )
-            ro = random.randint(4, 15)
             cur.executemany(
-                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-                [
-                    (
-                        planet[0],
-                        ro,
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.0,
-                        0,
-                    )
-                ],
+                "INSERT INTO systems VALUES(?, ?, ?)", [(plt_id, sys, planet[0])]
             )
             cur.execute("DELETE FROM unclaimed_planets WHERE planet = ?", planet)
-        cur.execute("DELETE from unclaimed_systems WHERE system = ?", (sys,))
-        con.commit
+            cur.execute("DELETE FROM unclaimed_systems WHERE planet = ?", planet)
+        cn = cur.execute(
+            "SELECT system2 FROM unclaimed_connections WHERE system1 = ?", (sys,)
+        ).fetchall()
+        for c in cn:
+            cur.executemany(
+                "INSERT INTO connections VALUES(?, ?)",
+                [
+                    (
+                        sys,
+                        c[0],
+                    )
+                ],
+            )
+        cur.execute("DELETE FROM unclaimed_systems WHERE system = ?", (sys,))
+        cur.execute("DELETE FROM unclaimed_connections WHERE system1 = ?", (sys,))
+        con.commit()
         return DiscordStatusCode.all_clear
 
     "this function starts construction on the planet"

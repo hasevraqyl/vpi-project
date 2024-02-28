@@ -157,7 +157,7 @@ async def system(interaction: discord.Interaction, name: str):
     """Информация о системе."""
     message = Message(interaction)
     if message.auth():
-        polity, planets, st, status = Game.fetch_System(name)
+        polity, planets, st, connections, status = Game.fetch_System(name)
         if message.fill_string(status, "системы"):
             if st is None:
                 sst = ""
@@ -166,7 +166,7 @@ async def system(interaction: discord.Interaction, name: str):
             else:
                 sst = f"В системе есть строящаяся станция. До завершения {st} ходов."
             message.set_string(
-                f"Система {name} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets} {sst}"
+                f"Система {name} - часть империи {polity}. \nВ системе находятся следующие планеты: {planets} {sst} \n Система связана со следующими: {connections}"
             )
     await interaction.response.send_message(message.get_string())
 
@@ -185,6 +185,21 @@ async def unclaimed(interaction: discord.Interaction, name: str):
                 f"Система {name} незаселена. \n В системе находятся следующие планеты: {planets}."
             )
     await interaction.response.send_message(message.get_string())
+
+
+@client.tree.command()
+@app_commands.describe(
+    name1="название первой системы",
+    name2="название второй системы",
+)
+async def connect(interaction: discord.Interaction, name1: str, name2: str):
+    """Соединить две системы."""
+    m = Message(interaction)
+    if m.auth():
+        status = Game.create_Connection(name1, name2)
+        if m.fill_string(status, "системы"):
+            m.set_string(f"Успешно соединены системы {name1} и {name2}.")
+    await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()
