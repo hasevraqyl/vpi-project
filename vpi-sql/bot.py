@@ -215,7 +215,7 @@ async def new_system(interaction: discord.Interaction, name: str):
     if message.auth():
         status = Game.generate_system(name)
         if message.fill_string(status, ""):
-            message.set_string("Система успешно сгенерированна.")
+            message.set_string(f"Система {name} успешно сгенерирована.")
     await interaction.response.send_message(message.get_string())
 
 
@@ -353,7 +353,7 @@ async def claim_system(interaction: discord.Interaction, polity: str, system: st
             m.set_string(
                 f"Система {system} передана политии {polity} вместе с планетами."
             )
-    await interaction.response.send_message(m.set_string())
+    await interaction.response.send_message(m.get_string())
 
 
 @client.tree.command()

@@ -1176,9 +1176,9 @@ class Game(object):
             res = cur.execute(
                 "SELECT RO, BP, GP, VP, hyp, sil, hosp FROM unclaimed_planets WHERE planet = ?",
                 planet,
-            ).fetchall()
+            ).fetchone()
             cur.executemany(
-                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         planet[0],
@@ -1187,6 +1187,7 @@ class Game(object):
                         res[2],
                         res[3],
                         0.0,
+                        0.0,
                         res[4],
                         res[5],
                         res[6],
@@ -1194,7 +1195,15 @@ class Game(object):
                 ],
             )
             cur.executemany(
-                "INSERT INTO systems VALUES(?, ?, ?)", [(plt_id, sys, planet[0])]
+                "INSERT INTO systems VALUES(?, ?, ?, ?)",
+                [
+                    (
+                        plt_id[0],
+                        sys,
+                        planet[0],
+                        res[6],
+                    )
+                ],
             )
             cur.execute("DELETE FROM unclaimed_planets WHERE planet = ?", planet)
             cur.execute("DELETE FROM unclaimed_systems WHERE planet = ?", planet)
