@@ -31,13 +31,13 @@ class Message(object):
         return self._auth
 
     def fill_string(self, status, no_elem):
-        if status == "no_table":
+        if status.name == "no_table":
             self._string = "Ошибка. Перезапустите игру."
             return False
-        elif status == "no_elem":
+        elif status.name == "no_elem":
             self._string = f"Такой {no_elem} не существует."
             return False
-        elif status == "unknown":
+        elif status.name == "unknown":
             self._string = "Неизвестная ошибка."
             return False
         else:
@@ -198,7 +198,10 @@ async def connect(interaction: discord.Interaction, name1: str, name2: str):
     if m.auth():
         status = Game.create_Connection(name1, name2)
         if m.fill_string(status, "системы"):
-            m.set_string(f"Успешно соединены системы {name1} и {name2}.")
+            if status.name == "redundant_elem":
+                m.set_string("Такая связь уже существует.")
+            else:
+                m.set_string(f"Успешно соединены системы {name1} и {name2}.")
     await interaction.response.send_message(m.get_string())
 
 

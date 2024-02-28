@@ -762,7 +762,9 @@ class Game(object):
             sst = sl[0][1]
         elif len(sl) > 0 and sl[0][1] == 0:
             sst = 0
-        connection_list = cur.execute("SELECT system2 FROM connections WHERE system1 = ?", (sys,)).fetchall()
+        connection_list = cur.execute(
+            "SELECT system2 FROM connections WHERE system1 = ?", (sys,)
+        ).fetchall()
         planet_string = comma_stringer(planet_list)
         connection_string = comma_stringer(connection_list)
         polity = list(
@@ -777,7 +779,13 @@ class Game(object):
                 ),
             )
         )[0][0]
-        return polity, planet_string, sst, connection_string, DiscordStatusCode.all_clear
+        return (
+            polity,
+            planet_string,
+            sst,
+            connection_string,
+            DiscordStatusCode.all_clear,
+        )
 
     @classmethod
     def fetch_Unclaimed(cls, sys):
@@ -891,25 +899,28 @@ class Game(object):
                 return DiscordStatusCode.no_elem
         if (
             cur.execute(
-                "SELECT system1 FROM connections WHERE system1 = ?, system2 = ?",
+                "SELECT system1 FROM connections WHERE system1 = ? AND system2 = ?",
                 (
                     sys1,
                     sys2,
                 ),
             ).fetchone()
             or cur.execute(
-                "SELECT system1 FROM unclaimed_connections WHERE system1 = ?, system2 = ?",
+                "SELECT system1 FROM unclaimed_connections WHERE system1 = ? AND system2 = ?",
                 (
                     sys1,
                     sys2,
                 ),
-            )
+            ).fetchone()
         ) is not None:
             return DiscordStatusCode.redundant_elem
         if (
-            cur.execute("SELECT DISTINCT system FROM systems wHERE system = ?", (sys1,))
+            cur.execute(
+                "SELECT DISTINCT system FROM systems wHERE system = ?", (sys1,)
+            ).fetchone()
             is not None
         ):
+            print("got here 2")
             cur.executemany(
                 "INSERT INTO connections VALUES(?, ?)",
                 [
@@ -920,6 +931,7 @@ class Game(object):
                 ],
             )
         else:
+            print("got here 3")
             cur.executemany(
                 "INSERT INTO unclaimed_connections VALUES(?, ?)",
                 [
@@ -930,7 +942,9 @@ class Game(object):
                 ],
             )
         if (
-            cur.execute("SELECT DISTINCT system FROM systems wHERE system = ?", (sys2,))
+            cur.execute(
+                "SELECT DISTINCT system FROM systems wHERE system = ?", (sys2,)
+            ).fetchone()
             is not None
         ):
             cur.executemany(
@@ -952,6 +966,7 @@ class Game(object):
                     )
                 ],
             )
+        con.commit()
         return DiscordStatusCode.all_clear
 
     @classmethod
