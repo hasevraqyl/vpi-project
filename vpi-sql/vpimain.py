@@ -752,7 +752,7 @@ class Game(object):
         planet_list = list(
             cur.execute("SELECT planet FROM systems where system = ?", (sys,))
         )
-        sst = 0
+        sst = -1
         sl = list(
             cur.execute(
                 "SELECT station, turns_remains from stations where system = ?", (sys,)

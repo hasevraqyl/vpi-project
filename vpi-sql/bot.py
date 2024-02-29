@@ -159,7 +159,7 @@ async def system(interaction: discord.Interaction, name: str):
     if message.auth():
         polity, planets, st, connections, status = Game.fetch_System(name)
         if message.fill_string(status, "системы"):
-            if st is None:
+            if st == -1:
                 sst = ""
             elif st == 0:
                 sst = "В системе есть станция."
