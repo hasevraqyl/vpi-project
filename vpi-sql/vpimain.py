@@ -497,19 +497,15 @@ class Game(object):
     def turn(cls):
         if not check_table():
             return DiscordStatusCode.no_table
-        for row in list(
-            cur.execute(
-                "SELECT polity_id, polity_name, polity_desc, creds, science, limit_pol, limit_hyp, limit_sil FROM polities"
-            )
-        ):
+        for row in cur.execute(
+            "SELECT polity_id, polity_name, polity_desc, creds, science, limit_pol, limit_hyp, limit_sil FROM polities"
+        ).fetchall():
             calc_ship(row[0])
             academics = 0.0
-            turnpol = list(
-                cur.execute(
-                    "SELECT MAX(turn) from historical_polity where polity_id = ?",
-                    (row[0],),
-                )
-            )[0][0]
+            turnpol = cur.execute(
+                "SELECT MAX(turn) from historical_polity where polity_id = ?",
+                (row[0],),
+            ).fetchone()
             if turnpol is None:
                 turnpol = 1
             cur.executemany(
@@ -528,18 +524,13 @@ class Game(object):
                     )
                 ],
             )
-            for row2 in list(
-                cur.execute(
-                    "SELECT system, planet FROM systems WHERE polity_id = ?", (row[0],)
-                )
-            ):
-
-                for row3 in list(
-                    cur.execute(
-                        "SELECT RO, BP, RS, GP, VP, pop, hosp, hyp, sil FROM resources WHERE planet = ?",
-                        (row2[1],),
-                    )
-                ):
+            for row2 in cur.execute(
+                "SELECT system, planet FROM systems WHERE polity_id = ?", (row[0],)
+            ).fetchall():
+                for row3 in cur.execute(
+                    "SELECT RO, BP, RS, GP, VP, pop, hosp, hyp, sil FROM resources WHERE planet = ?",
+                    (row2[1],),
+                ).fetchall():
                     employment = 0.0
                     housing = 0.0
                     bp_total = row3[1]
@@ -547,12 +538,10 @@ class Game(object):
                     total_h = 0.0
                     total_s = 0.0
                     total_sh = 0.0
-                    turn = list(
-                        cur.execute(
-                            "SELECT MAX(turn) FROM historical_planet where planet = ?",
-                            (row2[1],),
-                        )
-                    )[0][0]
+                    turn = cur.execute(
+                        "SELECT MAX(turn) FROM historical_planet where planet = ?",
+                        (row2[1],),
+                    ).fetchone()
                     if turn is None:
                         turn = 1
                     cur.executemany(
@@ -572,12 +561,10 @@ class Game(object):
                             )
                         ],
                     )
-                    for row4 in list(
-                        cur.execute(
-                            "select building, turns_remains, id, data from buildings where planet = ?",
-                            (row2[1],),
-                        )
-                    ):
+                    for row4 in cur.execute(
+                        "select building, turns_remains, id, data from buildings where planet = ?",
+                        (row2[1],),
+                    ).fetchall():
                         turns = row4[1]
                         if turns > 0:
                             turns = turns - 1
@@ -665,12 +652,10 @@ class Game(object):
                             row[0],
                         ),
                     )
-                station = list(
-                    cur.execute(
-                        "SELECT station, turns_remains from stations where system = ?",
-                        (row2[0],),
-                    )
-                )
+                station = cur.execute(
+                    "SELECT station, turns_remains from stations where system = ?",
+                    (row2[0],),
+                ).fetchall()
                 if len(station) > 0:
                     turns2 = station[0][1]
                     if turns2 > 0:
@@ -682,12 +667,10 @@ class Game(object):
                                 row2[0],
                             ),
                         )
-                    for build in list(
-                        cur.execute(
-                            "SELECT building, turns_remains, id from station_builds WHERE system = ?",
-                            (row2[0],),
-                        )
-                    ):
+                    for build in cur.execute(
+                        "SELECT building, turns_remains, id from station_builds WHERE system = ?",
+                        (row2[0],),
+                    ).fetchall():
                         turns3 = build[1]
                         if turns3 > 0:
                             turns3 = turns3 - 1
