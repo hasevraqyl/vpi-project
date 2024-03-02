@@ -713,12 +713,10 @@ class Game(object):
         if len(pl_sys) == 0:
             return None, None, DiscordStatusCode.no_elem
         planet_system = pl_sys[0][0]
-        planet_resources = list(
-            cur.execute(
-                "SELECT RO, BP, GP, VP, RS, pop, hosp FROM resources WHERE planet = ?",
-                (pln,),
-            )
-        )[0]
+        planet_resources = cur.execute(
+            "SELECT RO, BP, GP, VP, RS, pop, hosp FROM resources WHERE planet = ?",
+            (pln,),
+        ).fetchall()[0]
         return planet_system, planet_resources, DiscordStatusCode.all_clear
 
     "this function fetches information about a system"
@@ -727,20 +725,18 @@ class Game(object):
     def fetch_System(cls, sys):
         if not check_table():
             return None, None, None, None, DiscordStatusCode.no_table
-        pl_sys = list(
-            cur.execute("SELECT system FROM systems where system = ?", (sys,))
-        )
+        pl_sys = cur.execute(
+            "SELECT system FROM systems where system = ?", (sys,)
+        ).fetchall()
         if len(pl_sys) == 0:
             return None, None, None, None, DiscordStatusCode.no_elem
-        planet_list = list(
-            cur.execute("SELECT planet FROM systems where system = ?", (sys,))
-        )
+        planet_list = cur.execute(
+            "SELECT planet FROM systems where system = ?", (sys,)
+        ).fetchall()
         sst = -1
-        sl = list(
-            cur.execute(
-                "SELECT station, turns_remains from stations where system = ?", (sys,)
-            )
-        )
+        sl = cur.execute(
+            "SELECT station, turns_remains from stations where system = ?", (sys,)
+        ).fetchall()
         if len(sl) > 0 and sl[0][1] > 0:
             sst = sl[0][1]
         elif len(sl) > 0 and sl[0][1] == 0:
@@ -774,9 +770,9 @@ class Game(object):
     def fetch_Unclaimed(cls, sys):
         if not check_table():
             return None, DiscordStatusCode.no_table
-        pl_sys = list(
-            cur.execute("SELECT system FROM unclaimed_systems where system = ?", (sys,))
-        )
+        pl_sys = cur.execute(
+            "SELECT system FROM unclaimed_systems where system = ?", (sys,)
+        ).fetchall()
         if len(pl_sys) == 0:
             return None, DiscordStatusCode.no_elem
         return (
@@ -805,27 +801,23 @@ class Game(object):
     def station_list(cls, pol):
         if not check_table():
             return None, None, DiscordStatusCode.no_table
-        pol_id = list(
-            cur.execute("SELECT polity_id FROM polities WHERE polity_name = ?", (pol,))
-        )
+        pol_id = cur.execute(
+            "SELECT polity_id FROM polities WHERE polity_name = ?", (pol,)
+        ).fetchall()
         if len(pol_id) == 0:
             return None, None, DiscordStatusCode.no_elem
         return (
             comma_stringer(
-                list(
-                    cur.execute(
-                        "SELECT DISTINCT systems.system FROM systems INNER JOIN stations ON stations.system = systems.system WHERE stations.turns_remains = 0 AND systems.polity_id = ?",
-                        pol_id[0],
-                    )
-                )
+                cur.execute(
+                    "SELECT DISTINCT systems.system FROM systems INNER JOIN stations ON stations.system = systems.system WHERE stations.turns_remains = 0 AND systems.polity_id = ?",
+                    pol_id[0],
+                ).fetchall()
             ),
             comma_stringer(
-                list(
-                    cur.execute(
-                        "SELECT DISTINCT systems.system FROM systems INNER JOIN stations ON stations.system = systems.system WHERE stations.turns_remains != 0 AND systems.polity_id = ?",
-                        pol_id[0],
-                    )
-                )
+                cur.execute(
+                    "SELECT DISTINCT systems.system FROM systems INNER JOIN stations ON stations.system = systems.system WHERE stations.turns_remains != 0 AND systems.polity_id = ?",
+                    pol_id[0],
+                ).fetchall()
             ),
             DiscordStatusCode.all_clear,
         )
@@ -836,7 +828,7 @@ class Game(object):
             return None, DiscordStatusCode.no_table
         return (
             comma_stringer(
-                list(cur.execute("SELECT DISTINCT system FROM unclaimed_systems"))
+                cur.execute("SELECT DISTINCT system FROM unclaimed_systems").fetchall()
             ),
             DiscordStatusCode.all_clear,
         )
@@ -845,9 +837,9 @@ class Game(object):
     def fetch_Polity(cls, pol):
         if not check_table():
             return None, None, DiscordStatusCode.no_table
-        pl_sys = list(
-            cur.execute("SELECT polity_id FROM polities where polity_name = ?", (pol,))
-        )
+        pl_sys = cur.execute(
+            "SELECT polity_id FROM polities where polity_name = ?", (pol,)
+        ).fetchall()
         if len(pl_sys) == 0:
             return None, None, DiscordStatusCode.no_elem
         system_list = list(
@@ -958,7 +950,9 @@ class Game(object):
             return DiscordStatusCode.no_table
         if (
             len(
-                list(cur.execute("SELECT system FROM systems where planet = ?", (pln,)))
+                cur.execute(
+                    "SELECT system FROM systems where planet = ?", (pln,)
+                ).fetchall()
             )
             == 0
         ):
@@ -973,26 +967,24 @@ class Game(object):
     def transfer_System(cls, sys, pol):
         if not check_table():
             return None, DiscordStatusCode.no_table
-        pl_sys = list(
-            cur.execute("SELECT polity_id FROM systems where system = ?", (sys,))
-        )
-        pl_name = list(
-            cur.execute(
-                "SELECT polity_name FROM polities where polity_id = ?", pl_sys[0]
-            )
-        )
+        pl_sys = cur.execute(
+            "SELECT polity_id FROM systems where system = ?", (sys,)
+        ).fetchall()
+        pl_name = cur.execute(
+            "SELECT polity_name FROM polities where polity_id = ?", pl_sys[0]
+        ).fetchall()
         if len(pl_sys) == 0:
             return None, DiscordStatusCode.no_elem
-        pl_pol = list(
-            cur.execute("SELECT polity_id FROM polities where polity_name = ?", (pol,))
-        )
+        pl_pol = cur.execute(
+            "SELECT polity_id FROM polities where polity_name = ?", (pol,)
+        ).fetchall()
         if len(pl_pol) == 0:
             return None, None, DiscordStatusCode.no_elem
         if pl_sys == pl_pol:
             return None, None, DiscordStatusCode.invalid_elem
-        system_list = list(
-            cur.execute("SELECT planet FROM systems where system = ?", (sys,))
-        )
+        system_list = cur.execute(
+            "SELECT planet FROM systems where system = ?", (sys,)
+        ).fetchall()
         cur.executemany(
             "DELETE from systems where polity_id = ? AND system = ?",
             [
@@ -1218,20 +1210,16 @@ class Game(object):
         time = b.buildtime
         if b is None or b.b:
             return DiscordStatusCode.invalid_elem
-        planet = list(
-            cur.execute(
-                "SELECT planet, hosp, hyp, sys, RO from systems where planet = ?",
-                (pln,),
-            )
-        )[0]
+        planet = cur.execute(
+            "SELECT planet, hosp, hyp, sys, RO from systems where planet = ?",
+            (pln,),
+        ).fetchall()[0]
         if len(planet) == 0:
             return DiscordStatusCode.no_elem
-        old_buildings = list(
-            cur.execute(
-                "SELECT building, turns_remains, id from buildings where planet = ?",
-                (pln,),
-            )
-        )
+        old_buildings = cur.execute(
+            "SELECT building, turns_remains, id from buildings where planet = ?",
+            (pln,),
+        ).fetchall()
         if b.h:
             if (
                 calculate_housing(old_buildings) + 1 > calculate_space(old_buildings)
@@ -1270,11 +1258,9 @@ class Game(object):
     def planet_Buildings(cls, pln):
         if not check_table():
             return None, DiscordStatusCode.no_table
-        buildings_list = list(
-            cur.execute(
-                "SELECT building, turns_remains from buildings where planet = ?", (pln,)
-            )
-        )
+        buildings_list = cur.execute(
+            "SELECT building, turns_remains from buildings where planet = ?", (pln,)
+        ).fetchall()
         if len(buildings_list) == 0:
             return None, DiscordStatusCode.no_elem
         return buildings_list, DiscordStatusCode.all_clear
@@ -1285,16 +1271,14 @@ class Game(object):
     def build_Station(cls, sys):
         if not check_table():
             return DiscordStatusCode.no_table
-        ssystem = list(
-            cur.execute("SELECT system FROM systems WHERE system = ?", (sys,))
-        )
+        ssystem = cur.execute(
+            "SELECT system FROM systems WHERE system = ?", (sys,)
+        ).fetchall()
         if len(ssystem) == 0:
             return DiscordStatusCode.no_elem
-        station = list(
-            cur.execute(
-                "SELECT station, turns_remains FROM stations WHERE system = ?", (sys,)
-            )
-        )
+        station = cur.execute(
+            "SELECT station, turns_remains FROM stations WHERE system = ?", (sys,)
+        ).fetchall()
         if len(station) > 0:
             return DiscordStatusCode.redundant_elem
         cur.executemany(
@@ -1360,19 +1344,15 @@ class Game(object):
     def planet_demos(cls, pln):
         if not check_table():
             return None, None, None, DiscordStatusCode.no_table
-        planet = list(
-            cur.execute(
-                "SELECT RO, BP, GP, VP, RS, pop FROM resources WHERE planet = ?", (pln,)
-            )
-        )
+        planet = cur.execute(
+            "SELECT RO, BP, GP, VP, RS, pop FROM resources WHERE planet = ?", (pln,)
+        ).fetchall()
         if len(planet) == 0:
             return None, None, None, DiscordStatusCode.no_elem
-        info = list(
-            cur.execute(
-                "SELECT RO, BP, GP, VP, RS, pop FROM historical_planet WHERE planet =? ORDER BY turn",
-                (pln,),
-            )
-        )
+        info = cur.execute(
+            "SELECT RO, BP, GP, VP, RS, pop FROM historical_planet WHERE planet =? ORDER BY turn",
+            (pln,),
+        ).fetchall()
         if len(info) == 0:
             return None, None, None, DiscordStatusCode.invalid_elem
         bf = []
@@ -1404,20 +1384,16 @@ class Game(object):
     def polity_finances(cls, plt):
         if not check_table():
             return None, None, None, DiscordStatusCode.no_table
-        planet = list(
-            cur.execute(
-                "SELECT polity_id, polity_desc, creds FROM polities WHERE polity_name = ?",
-                (plt,),
-            )
-        )[0]
+        planet = cur.execute(
+            "SELECT polity_id, polity_desc, creds FROM polities WHERE polity_name = ?",
+            (plt,),
+        ).fetchall()[0]
         if len(planet) == 0:
             return None, None, None, DiscordStatusCode.no_elem
-        info = list(
-            cur.execute(
-                "SELECT polity_id, polity_desc, creds FROM historical_polity WHERE polity_name =? ORDER BY turn",
-                (plt,),
-            )
-        )
+        info = cur.execute(
+            "SELECT polity_id, polity_desc, creds FROM historical_polity WHERE polity_name =? ORDER BY turn",
+            (plt,),
+        ).fetchall()
         if len(info) == 0:
             return None, None, None, DiscordStatusCode.invalid_elem
         bf = -1000000000.0
@@ -1435,22 +1411,20 @@ class Game(object):
     def deport(cls, pln_1, pln_2):
         if not check_table():
             return DiscordStatusCode.no_table
-        pln1_pol = list(
-            cur.execute("SELECT polity_id from systems where planet = ?", (pln_1,))
-        )
-        pln2_pol = list(
-            cur.execute("SELECT polity_id from systems where planet = ?", (pln_2,))
-        )
+        pln1_pol = cur.execute(
+            "SELECT polity_id from systems where planet = ?", (pln_1,)
+        ).fetchall()
+        pln2_pol = cur.execute(
+            "SELECT polity_id from systems where planet = ?", (pln_2,)
+        ).fetchall()
         if len(pln1_pol) == 0 or len(pln2_pol) == 2:
             return DiscordStatusCode.no_elem
         if pln1_pol != pln2_pol:
             return DiscordStatusCode.invalid_elem
-        for e in list(
-            cur.execute(
-                "SELECT planetto from population_transfers where planetfrom = ?",
-                (pln_1,),
-            )
-        ):
+        for e in cur.execute(
+            "SELECT planetto from population_transfers where planetfrom = ?",
+            (pln_1,),
+        ).fetchall():
             if e[0] == pln_2:
                 return DiscordStatusCode.redundant_elem
         cur.executemany(
@@ -1471,23 +1445,19 @@ class Game(object):
     def research_tech(cls, pol, tech):
         if not check_table():
             return DiscordStatusCode.no_table
-        polity = list(
-            cur.execute(
-                "SELECT polity_id, polity_desc, creds, science from polities where polity_name = ?",
-                (pol,),
-            )
-        )
+        polity = cur.execute(
+            "SELECT polity_id, polity_desc, creds, science from polities where polity_name = ?",
+            (pol,),
+        ).fetchall()
         if len(polity) == 0:
             return None, DiscordStatusCode.no_elem
         t = Techs.fetch(tech)
         if t.category is None:
             return None, DiscordStatusCode.invalid_elem
-        techs = list(
-            cur.execute(
-                "SELECT tech_name, cost_left, currently_researched from techs where polity_id = ?",
-                (polity[0][0],),
-            )
-        )
+        techs = cur.execute(
+            "SELECT tech_name, cost_left, currently_researched from techs where polity_id = ?",
+            (polity[0][0],),
+        ).fetchall()
         tech_flag = False
         cur_tech = ()
         if t.number == 1:
@@ -1547,12 +1517,10 @@ class Game(object):
             cur.execute("SELECT polity_id FROM systems WHERE system = ?", (sys,))
         )[0][0]
         sya = len(
-            list(
-                cur.execute(
-                    "SELECT id FROM station_builds WHERE building = 'Верфь' and system = ? and turns_remains = 0",
-                    (sys,),
-                )
-            )
+            cur.execute(
+                "SELECT id FROM station_builds WHERE building = 'Верфь' and system = ? and turns_remains = 0",
+                (sys,),
+            ).fetchall()
         )
         ships = len(
             list(
@@ -1561,15 +1529,13 @@ class Game(object):
         )
         if ships >= sya:
             return DiscordStatusCode.redundant_elem
-        t = list(
-            cur.execute(
-                "SELECT cost FROM templates WHERE name = ? AND polity_id = ?",
-                (
-                    tmpl,
-                    pol_id,
-                ),
-            )
-        )
+        t = cur.execute(
+            "SELECT cost FROM templates WHERE name = ? AND polity_id = ?",
+            (
+                tmpl,
+                pol_id,
+            ),
+        ).fetchall()
         id = (
             list(cur.execute((cur.execute("SELECT MAX(id) FROM spaceships"))))[0][0] + 1
         )
@@ -1596,30 +1562,26 @@ class Game(object):
         )[0][0]
         if pol_id is None:
             return DiscordStatusCode.no_elem
-        costid = list(
-            cur.execute(
-                "SELECT cost, id FROM templates WHERE polity_id = ? AND name = ?",
-                (
-                    pol_id,
-                    tmpl,
-                ),
-            )
-        )[0]
+        costid = cur.execute(
+            "SELECT cost, id FROM templates WHERE polity_id = ? AND name = ?",
+            (
+                pol_id,
+                tmpl,
+            ),
+        ).fetchall()[0]
         if costid[0] is None:
             return DiscordStatusCode.no_elem
         mod = Modules.fetch(name)
         if mod is None:
             return DiscordStatusCode.invalid_elem
         totalcost = 0
-        for c in list(
-            cur.execute(
-                "SELECT type FROM template_modules WHERE name = ? AND id = ?",
-                (
-                    tmpl,
-                    costid[1],
-                ),
-            )
-        ):
+        for c in cur.execute(
+            "SELECT type FROM template_modules WHERE name = ? AND id = ?",
+            (
+                tmpl,
+                costid[1],
+            ),
+        ).fetchall():
             totalcost += Modules.fetch(c[0]).cost
         if totalcost > costid[0]:
             return DiscordStatusCode.redundant_elem
@@ -1647,15 +1609,13 @@ class Game(object):
         )[0][0]
         if pol_id is None:
             return DiscordStatusCode.no_elem
-        templ = list(
-            cur.execute(
-                "SELECT name FROM templates WHERE polity_id = ? AND name = ?",
-                (
-                    pol_id,
-                    name,
-                ),
-            )
-        )
+        templ = cur.execute(
+            "SELECT name FROM templates WHERE polity_id = ? AND name = ?",
+            (
+                pol_id,
+                name,
+            ),
+        ).fetchall()
         if len(templ) != 0:
             return DiscordStatusCode.redundant_elem
         mx = cur.execute("SELECT max(id) FROM templates").fetchone()[0]
