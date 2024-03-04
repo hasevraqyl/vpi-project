@@ -167,18 +167,15 @@ def calc_wearing(b, pln):
 
 
 def calc_munic(pln):
-    mun = list(
-        cur.execute(
-            "SELECT id, data FROM buildings WHERE planet = ? AND building = 'Муниципалка' AND turns_remains = 0",
-            (pln,),
-        )
-    )
-    av = list(
-        cur.execute(
-            "SELECT id FROM buildings WHERE planet = ? AND building = 'Аварийные кварталы'",
-            (pln,),
-        )
-    )
+    mun = cur.execute(
+        "SELECT id, data FROM buildings WHERE planet = ? AND building = 'Муниципалка' AND turns_remains = 0",
+        (pln,),
+    ).fetchall()
+
+    av = cur.execute(
+        "SELECT id FROM buildings WHERE planet = ? AND building = 'Аварийные кварталы'",
+        (pln,),
+    ).fetchall()
     t = len(av)
     n = 0
     for m in mun:
@@ -292,7 +289,7 @@ def calc_tech(pol):
 
 
 def calc_pop():
-    li = list(cur.execute("SELECT polity_1, polity_2 from agreements"))
+    li = cur.execute("SELECT polity_1, polity_2 from agreements").fetchall()
     agrl = []
     for e in li:
         if len(agrl) > 0:
@@ -303,7 +300,7 @@ def calc_pop():
                     agrl.append([e[0], e[1]])
         else:
             agrl.append([e[0], e[1]])
-    plt_list = list(cur.execute("SELECT polity_id from polities"))
+    plt_list = cur.execute("SELECT polity_id from polities").fetchall()
     for e in plt_list:
         f = False
         for zone in agrl:
@@ -316,18 +313,14 @@ def calc_pop():
         array = []
         pops = []
         for polity in zone:
-            planets = list(
-                cur.execute(
-                    "SELECT planet from systems where polity_id = ?", tuple(polity)
-                )
-            )
+            planets = cur.execute(
+                "SELECT planet from systems where polity_id = ?", tuple(polity)
+            ).fetchall()
             for planet in planets:
-                res = list(
-                    cur.execute(
-                        "SELECT pop, RO, GP, VP, BP from resources where planet = ?",
-                        (planet),
-                    )
-                )[0]
+                res = cur.execute(
+                    "SELECT pop, RO, GP, VP, BP from resources where planet = ?",
+                    (planet),
+                ).fetchone()
                 builds = list(
                     cur.execute(
                         """SELECT building, turns_remains, id from buildings WHERE planet = ?""",
@@ -372,14 +365,15 @@ def calc_pop():
 
 
 def calc_transfer():
-    li = list(cur.execute("SELECT planetfrom, planetto FROM population_transfers"))
+    li = cur.execute("SELECT planetfrom, planetto FROM population_transfers").fetchall()
     for e in li:
-        sys1 = list(
-            cur.execute("SELECT polity_id from systems where planet = ?", (e[0],))
-        )
-        sys2 = list(
-            cur.execute("SELECT polity_id from systems where planet = ?", (e[1],))
-        )
+        sys1 = cur.execute(
+            "SELECT polity_id from systems where planet = ?", (e[0],)
+        ).fetchall
+        sys2 = cur.execute(
+            "SELECT polity_id from systems where planet = ?", (e[1],)
+        ).fetchall()
+
         if sys1[0] != sys2[0]:
             cur.executemany(
                 "DELETE FROM population_transfers where planetfrom = ? AND planetto = ?",
@@ -391,9 +385,9 @@ def calc_transfer():
                 ],
             )
         else:
-            creds = list(
-                cur.execute("SELECT creds from polities WHERE polity_id = ?", sys1[0])
-            )[0][0]
+            creds = cur.execute(
+                "SELECT creds from polities WHERE polity_id = ?", sys1[0]
+            ).fetchone()[0]
             cur.execute(
                 "UPDATE polities SET creds = ? WHERE id = ?",
                 (
@@ -401,9 +395,9 @@ def calc_transfer():
                     sys1[0][0],
                 ),
             )
-        frompop = list(
-            cur.execute("SELECT pop from resources WHERE planet = ?", (e[0],))
-        )[0][0]
+        frompop = cur.execute(
+            "SELECT pop from resources WHERE planet = ?", (e[0],)
+        ).fetchone()[0]
         transfer = 0
         if frompop < 1.2:
             transfer = frompop
@@ -414,9 +408,9 @@ def calc_transfer():
         else:
             frompop = -1
             transfer = 1
-        topop = list(
-            cur.execute("SELECT pop from resources WHERE planet = ?", (e[1],))
-        )[0][0]
+        topop = cur.execute(
+            "SELECT pop from resources WHERE planet = ?", (e[1],)
+        ).fetchone()[0]
         topop = topop + transfer
         cur.execute("UPDATE resources SET pop = ? WHERE planet = ?", (e[0],))
         cur.execute("UPDATE resources SET pop = ? WHERE planet = ?", (e[1],))
