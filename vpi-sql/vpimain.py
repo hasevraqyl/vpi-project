@@ -496,10 +496,12 @@ class Game(object):
         ).fetchall():
             calc_ship(row[0])
             academics = 0.0
-            turnpol = cur.execute(
-                "SELECT MAX(turn) from historical_polity where polity_id = ?",
-                (row[0],),
-            ).fetchone()
+            turnpol = list(
+                cur.execute(
+                    "SELECT MAX(turn) from historical_polity where polity_id = ?",
+                    (row[0],),
+                )
+            )[0][0]
             if turnpol is None:
                 turnpol = 1
             cur.executemany(
