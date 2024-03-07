@@ -38,7 +38,9 @@ migration_prime = """
     sil    REAL NOT NULL
                 DEFAULT (0.0),
     hosp   INT  NOT NULL
-                DEFAULT (1)
+                DEFAULT (1),
+    vrt    REAL NOT NULL
+                DEFAULT (0.0)
     );
     CREATE TABLE systems (
     polity_id INTEGER NOT NULL,
@@ -86,6 +88,8 @@ migration_prime = """
     hyp    REAL NOT NULL
                 DEFAULT (0.0),
     sil    REAL NOT NULL
+                DEFAULT (0.0),
+    vrt   REAL NOT NULL
                 DEFAULT (0.0),
     turn   INT  NOT NULL
     );

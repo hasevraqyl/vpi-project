@@ -173,6 +173,23 @@ async def system(interaction: discord.Interaction, name: str):
 
 @client.tree.command()
 @app_commands.describe(
+    name="название планеты", amount="процент от максимальной соцподдержки"
+)
+async def social(interaction: discord.Interaction, name: str, amount: int):
+    """Изменение соцподдержки на планете."""
+    m = Message(interaction)
+    if m.auth():
+        status = Game.add_Social(name, amount)
+        if m.fill_string(status, "планеты"):
+            if status.name == "invalid_elem":
+                m.set_string("Введите кол-во процентов от 0 до 99")
+            else:
+                m.set_string(f"Теперь соцподдержка на планете {name} - {amount/100}.")
+    await interaction.response.send_message(m.get_string())
+
+
+@client.tree.command()
+@app_commands.describe(
     name="название незаселенной системы",
 )
 async def unclaimed(interaction: discord.Interaction, name: str):

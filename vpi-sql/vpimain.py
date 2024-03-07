@@ -464,12 +464,14 @@ class Game(object):
             (1, "pogglia", "no sex", 0.0, 0.0, 0.0, 0.0, 0.0),
             (2, "ubia", "sex", 0.0, 0.0, 0.0, 0.0, 0.0),
         ]
-        cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?, ?, ?)", polities)
+        cur.executemany(
+            "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", polities
+        )
         resources = [
-            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 10.0, 1, 0.0, 0.0),
-            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0, 1, 0.0, 0.0),
-            ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0, 10.0, 1, 0.0, 0.0),
-            ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0, 4.0, 1, 0.0, 0.0),
+            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 0.0, 0.0, 10.0, 1),
+            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0, 0.0, 0.0, 1),
+            ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0, 10.0, 0.0, 0.0, 1, 0.0),
+            ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0, 4.0, 0.0, 0.0, 1, 0.0),
         ]
         cur.executemany(
             "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", resources
@@ -1141,7 +1143,7 @@ class Game(object):
                 planet,
             ).fetchone()
             cur.executemany(
-                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         planet[0],
@@ -1154,6 +1156,7 @@ class Game(object):
                         res[4],
                         res[5],
                         res[6],
+                        0.0,
                     )
                 ],
             )
@@ -1186,6 +1189,27 @@ class Game(object):
         cur.execute("DELETE FROM unclaimed_systems WHERE system = ?", (sys,))
         cur.execute("DELETE FROM unclaimed_connections WHERE system1 = ?", (sys,))
         con.commit()
+        return DiscordStatusCode.all_clear
+
+    @classmethod
+    def add_Social(cls, pln, num):
+        if not check_table():
+            return DiscordStatusCode.no_table
+        if num > 100:
+            return DiscordStatusCode.invalid_elem
+        pl = cur.execute(
+            "SELECT vrt FROM resources WHERE planet = ?", (pln,)
+        ).fetchone()
+        if len(pl) == 0:
+            return DiscordStatusCode.no_elem
+        cur.execute(
+            "UPDATE resources SET vrt = ? WHERE planet = ?",
+            (
+                num / 100,
+                pln,
+            ),
+        )
+        con.commit
         return DiscordStatusCode.all_clear
 
     "this function starts construction on the planet"
