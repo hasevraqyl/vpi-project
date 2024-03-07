@@ -61,9 +61,6 @@ def check_table():
     return True
 
 
-"possibly deprecated, possibly will be brought in later, donotdelete"
-
-
 def calculate_bp(b, bp_total):
     if b[0] == "Основные промзоны" and b[1] == 0:
         bp_total = bp_total + 3.0
@@ -74,6 +71,21 @@ def calculate_vp(b, vp_total):
     if b[0] == "ВПК" and b[1] == 0:
         vp_total = vp_total + 3.0
     return vp_total
+
+
+def calculate_gp(bs):
+    total_gp = 0.0
+    if len(bs) == 0 or bs is None:
+        return total_gp
+    if not isinstance(bs[0], tuple):
+        builds = []
+        builds.append(bs)
+    else:
+        builds = bs
+    for b in builds:
+        if b[0] == "Гражданский сектор" and b[1] == 0:
+            total_gp += 1.0
+    return total_gp
 
 
 def calculate_housing(bs):
@@ -87,6 +99,21 @@ def calculate_housing(bs):
         builds = bs
     for b in builds:
         if Buildings.fetch(b[0]).h and b[1] == 0:
+            total_housing += 1.0
+    return total_housing
+
+
+def calculate_ghousing(bs):
+    total_housing = 0.0
+    if len(bs) == 0 or bs is None:
+        return total_housing
+    if not isinstance(bs[0], tuple):
+        builds = []
+        builds.append(bs)
+    else:
+        builds = bs
+    for b in builds:
+        if b[0] == "Кварталы I" and b[1] == 0:
             total_housing += 1.0
     return total_housing
 
@@ -247,6 +274,21 @@ def calc_ship(pol):
         return
 
 
+def calculate_delc(bs):
+    em = 0.0
+    if len(bs) == 0 or bs is None:
+        return 0.0
+    if not isinstance(bs[0], tuple):
+        builds = []
+        builds.append(bs)
+    else:
+        builds = bs
+    for b in builds:
+        if b[0] == "Деловой центр" and b[1] == 0:
+            em += 3.0
+    return em
+
+
 def calc_tech(pol):
     techs = cur.execute(
         "SELECT tech_name, cost_left, currently_researched from techs WHERE polity_id = ?",
@@ -285,6 +327,13 @@ def calc_tech(pol):
     return
 
 
+def calculate_ql(jobs, pop, vrt, gp, h, gh, delc):
+    employment = jobs / pop
+    if employment > 1:
+        employment = 1
+    return np.log10((employment + vrt) * ((gh / pop) * (h / pop / 2)) * (gp + delc))[0]
+
+
 "this function calculates the population after voluntary migration"
 
 
@@ -318,7 +367,7 @@ def calc_pop():
             ).fetchall()
             for planet in planets:
                 res = cur.execute(
-                    "SELECT pop, RO, GP, VP, BP from resources where planet = ?",
+                    "SELECT pop, RO, GP, VP, BP, vrt from resources where planet = ?",
                     (planet),
                 ).fetchone()
                 builds = list(
@@ -338,10 +387,15 @@ def calc_pop():
                 )
                 """
                 "this might also be deprecated?"
-                jobs = res[1] + res[2] + res[3] + res[4]
                 "+ promz * 3"
-                total = (
-                    calculate_housing(builds) * 5 + jobs + calculate_employment(builds)
+                total = calculate_ql(
+                    calculate_employment(builds),
+                    res[0],
+                    res[5],
+                    calculate_gp(builds),
+                    calculate_housing(builds),
+                    calculate_ghousing(builds),
+                    calculate_delc(builds),
                 )
                 pops.append(res[0])
                 array.append(total)
@@ -526,7 +580,7 @@ class Game(object):
                 "SELECT system, planet FROM systems WHERE polity_id = ?", (row[0],)
             ).fetchall():
                 for row3 in cur.execute(
-                    "SELECT RO, BP, RS, GP, VP, pop, hosp, hyp, sil FROM resources WHERE planet = ?",
+                    "SELECT RO, BP, RS, GP, VP, pop, hosp, hyp, sil, vrt FROM resources WHERE planet = ?",
                     (row2[1],),
                 ).fetchall():
                     employment = 0.0
@@ -534,8 +588,11 @@ class Game(object):
                     bp_total = row3[1]
                     vp_total = row3[4]
                     total_h = 0.0
+                    total_gh = 0.0
                     total_s = 0.0
                     total_sh = 0.0
+                    total_delc = 0.0
+                    gp_total = 0.0
                     turn = cur.execute(
                         "SELECT MAX(turn) FROM historical_planet where planet = ?",
                         (row2[1],),
@@ -573,12 +630,15 @@ class Game(object):
                             academics = academics + calculate_academics(row4)
                             employment = employment + calculate_employment(row4)
                             housing = housing + calculate_housing(row4)
+                            total_gh = total_gh + calculate_ghousing(row4)
                             "the following might be deprecated"
                             bp_total = calculate_bp(row4, bp_total)
                             vp_total = calculate_vp(row4, vp_total)
-                            total_h = calculate_h(row4)
-                            total_s = calculate_s(row4)
-                            total_sh = calculate_sh(row4)
+                            total_h = total_h + calculate_h(row4)
+                            total_s = total_s + calculate_s(row4)
+                            total_sh = total_sh + calculate_sh(row4)
+                            total_delc = total_delc + calculate_delc(row4)
+                            gp_total = gp_total + calculate_gp(row4)
                             calc_wearing(row2[1], row4)
                             bi = Buildings.fetch(row4[0])
                             cur.execute(
@@ -604,11 +664,16 @@ class Game(object):
                     """
                     """coefpop will later be calculated through other means"""
                     calc_munic(row2[1])
-                    cpop = row3[5] / (employment + 0.1)
-                    if cpop > 1:
-                        cpop = 1
-                    chouse = housing / row3[5]
-                    ctotal = cpop * 0.3 + chouse * 0.7
+                    ctotal = calculate_ql(
+                        employment,
+                        row3[5],
+                        row3[10],
+                        gp_total,
+                        housing,
+                        total_gh,
+                        total_delc,
+                    )
+                    cpop = employment / row3[5]
                     bp_total = min(bp_total, total_sh)
                     rsnew = min((row3[2] + ((row3[0] - bp_total) * ctotal)), total_sh)
                     popnew = row3[5] * 1.01
