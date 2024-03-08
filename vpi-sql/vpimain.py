@@ -518,17 +518,15 @@ class Game(object):
             (1, "pogglia", "no sex", 0.0, 0.0, 0.0, 0.0, 0.0),
             (2, "ubia", "sex", 0.0, 0.0, 0.0, 0.0, 0.0),
         ]
-        cur.executemany(
-            "INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)", polities
-        )
+        cur.executemany("INSERT INTO polities VALUES(?, ?, ?, ?, ?, ?, ?, ?)", polities)
         resources = [
-            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 0.0, 0.0, 10.0, 1),
-            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0, 0.0, 0.0, 1),
+            ("moskvabad", 12.0, 7.0, 1.0, 1.0, 0.0, 0.0, 0.0, 10.0, 1, 0.0),
+            ("rashidun", 12.0, 3.0, 1.0, 1.0, 0.0, 5.0, 0.0, 0.0, 1, 0.0),
             ("zumbia", 20.0, 4.0, 1.0, 1.0, 0.0, 10.0, 0.0, 0.0, 1, 0.0),
             ("ubia", 11.0, 6.0, 1.0, 1.0, 0.0, 4.0, 0.0, 0.0, 1, 0.0),
         ]
         cur.executemany(
-            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", resources
+            "INSERT INTO resources VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", resources
         )
         planets = [
             (1, "poggl-loire", "moskvabad", 1),
