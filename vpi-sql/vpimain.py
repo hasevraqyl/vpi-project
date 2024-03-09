@@ -1469,8 +1469,8 @@ class Game(object):
         ).fetchall()
         if len(info) == 0:
             return None, None, None, DiscordStatusCode.invalid_elem
-        bf = -1000000000.0
-        stl = -1000000000.0
+        bf = -(np.Infinity)
+        stl = -(np.Infinity)
         for i in range(len(info)):
             if i == (len(info) - 5) and len(info) > 5:
                 bf = info[i][2]
